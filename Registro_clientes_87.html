@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Registro de Clientes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="form-container">
+        <form id="registroForm"> <!-- El 'action' ya no es necesario -->
+            <img src="imagenes/MEMBRETE_HEADER.png" alt="Membrete" class="header-image">
+            <h2>Registro de Oportunidad</h2>
+
+            <!-- Todos los campos del formulario van aquí, sin cambios -->
+            <div class="form-group">
+                <label for="fechaHora">Fecha y Hora</label>
+                <input type="datetime-local" id="fechaHora" name="fechaHora" required>
+            </div>
+            <div class="form-group">
+                <label for="sede">Sede</label>
+                <select id="sede" name="sede" required>
+                    <option value="" disabled selected>Seleccione una sede</option>
+                    <option value="Calleja">Calleja</option>
+                    <option value="San patricio">San patricio</option>
+                    <option value="Santa Barbara">Santa Barbara</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="asesor">Nombre Asesor</label>
+                <select id="asesor" name="asesor" required>
+                    <option value="" disabled selected>Seleccione un asesor</option>
+                    <option value="Jhon Abril">Jhon Abril</option>
+                    <option value="Marco Loaiza">Marco Loaiza</option>
+                    <option value="Juan sebastian Ortega">Juan sebastian Ortega</option>
+                    <option value="Julieth Serrano">Julieth Serrano</option>
+                    <option value="Juan Diego Duarte">Juan Diego Duarte</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fuente">Fuente</label>
+                <select id="fuente" name="fuente" required>
+                    <option value="" disabled selected>Seleccione una fuente</option>
+                    <option value="Trafico">Trafico</option>
+                    <option value="Asesor">Asesor</option>
+                    <option value="Escala">Escala</option>
+                    <option value="Consignación JP">Consignación JP</option>
+                    <option value="Redes Sociales">Redes Sociales</option>
+                </select>
+            </div>
+            <div class="form-group-inline">
+                <div class="form-group">
+                    <label for="clienteNombre">Nombre Cliente</label>
+                    <input type="text" id="clienteNombre" name="clienteNombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="clienteCedula">Cédula Cliente</label>
+                    <input type="text" id="clienteCedula" name="clienteCedula" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="necesidad">Necesidad Principal</label>
+                <select id="necesidad" name="necesidad" required>
+                    <option value="" disabled selected>Seleccione una necesidad</option>
+                    <option value="Compra">Compra</option>
+                    <option value="Vende">Vende</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="tipoVehiculo">Busca / Vende</label>
+                <select id="tipoVehiculo" name="tipoVehiculo" required>
+                    <option value="" disabled selected>Seleccione un tipo</option>
+                    <option value="Carro">Carro</option>
+                    <option value="Camioneta">Camioneta</option>
+                    <option value="Moto">Moto</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="serieVehiculo">Serie del vehículo</label>
+                <input type="text" id="serieVehiculo" name="serieVehiculo">
+            </div>
+            <div class="form-group">
+                <label for="presupuesto">Presupuesto</label>
+                <input type="number" id="presupuesto" name="presupuesto">
+            </div>
+            <div class="form-group">
+                <label for="siguientePaso">Siguiente paso</label>
+                <select id="siguientePaso" name="siguientePaso" required>
+                    <option value="" disabled selected>Seleccione una opción</option>
+                    <option value="interesado">Interesado</option>
+                    <option value="seguimiento">Seguimiento</option>
+                    <option value="llamada">Llamada</option>
+                    <option value="agendamiento">Agendamiento</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="observaciones">Observaciones</label>
+                <textarea id="observaciones" name="observaciones" rows="4"></textarea>
+            </div>
+
+            <button type="submit" id="submit-button">Enviar Registro</button>
+            <div id="status-message"></div>
+        </form>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbx0wHLqNDqVn9J-vCy1SQEvjfCQOvQiMTJ_d689ycH7_50mBafvl6gEG4WNML2XoV4_AA/exec';
+        const form = document.getElementById('registroForm');
+        const submitButton = document.getElementById('submit-button');
+        const statusMessage = document.getElementById('status-message');
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
+
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => data[key] = value);
+
+            fetch(scriptURL, { 
+                method: 'POST', 
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                statusMessage.style.color = 'green';
+                statusMessage.textContent = '¡Registro guardado exitosamente!';
+                form.reset();
+            })
+            .catch(error => {
+                console.error('Error!', error.message);
+                statusMessage.style.color = 'red';
+                statusMessage.textContent = 'Error: No se pudo guardar el registro.';
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enviar Registro';
+            });
+        });
+    </script>
+
+</body>
+</html>
