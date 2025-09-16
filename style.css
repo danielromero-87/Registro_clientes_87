@@ -43,7 +43,7 @@ h2 {
 }
 
 .header-image {
-    max-width: 250px; /* O el tamaño que prefiera */
+    max-width: 400px; /* O el tamaño que prefiera */
     display: block;
     margin: 0 auto 20px;
 }
