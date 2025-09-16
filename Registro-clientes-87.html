@@ -123,23 +123,21 @@
 
             fetch(scriptURL, { 
                 method: 'POST', 
-                mode: 'cors',
+                mode: 'no-cors', // <-- El cambio clave está aquí
                 headers: {
                     'Content-Type': 'text/plain;charset=utf-8',
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
+            .then(() => {
                 statusMessage.style.color = 'green';
-                statusMessage.textContent = '¡Registro guardado exitosamente!';
+                statusMessage.textContent = '¡Registro enviado! Verifique la hoja de cálculo para confirmar.';
                 form.reset();
             })
             .catch(error => {
                 console.error('Error!', error.message);
                 statusMessage.style.color = 'red';
-                statusMessage.textContent = 'Error: No se pudo guardar el registro.';
+                statusMessage.textContent = 'Error: No se pudo enviar el formulario. Verifique la conexión.';
             })
             .finally(() => {
                 submitButton.disabled = false;
