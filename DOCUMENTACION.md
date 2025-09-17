@@ -4,27 +4,60 @@
 
 Esta herramienta se desarrolla con el fin de poder llevar el control de los clientes que llegan a la vitrina. El objetivo principal es capturar todos los datos del formulario que se diligencia y almacenarlos en una base de datos de Google Sheets. Esta es la primera fase del desarrollo de la herramienta.
 
-## 2. ¿Cómo Funciona?
+## 2. Tecnologías Utilizadas
 
-El sistema se compone de tres partes principales que trabajan en conjunto:
+*   **Frontend (Lo que ve el usuario):**
+    *   **HTML5:** Para la estructura del formulario.
+    *   **CSS3:** Para los estilos y el diseño visual.
+    *   **JavaScript (ES6):** Para la lógica de envío de datos del formulario.
+    *   **Google Fonts:** Para la tipografía (`Poppins`).
 
-### Paso 1: El Usuario Abre el Formulario
+*   **Backend (Lo que pasa en la nube):**
+    *   **Google Apps Script:** Para procesar los datos y conectarse con Google Sheets.
 
-*   Un usuario accede a una URL proporcionada por Google Apps Script.
-*   El script de Google (`Code.gs`) ejecuta la función `doGet(e)`, que muestra el formulario de registro (`Registro-clientes-87.html`).
+*   **Base de Datos:**
+    *   **Google Sheets:** Actúa como base de datos para almacenar los registros.
 
-### Paso 2: El Usuario Rellena y Envía el Formulario
+*   **Control de Versiones:**
+    *   **Git y GitHub:** Para el seguimiento de cambios en el código y el versionado del proyecto.
 
-*   El usuario introduce los datos del cliente en el formulario.
-*   La hoja de estilos (`style.css`) asegura que el formulario sea visualmente atractivo y fácil de usar.
-*   Al hacer clic en "Enviar", los datos se envían al script de Google.
+## 3. Funcionamiento Detallado
 
-### Paso 3: Los Datos se Guardan en Google Sheets
+El sistema funciona en dos partes principales: el **Frontend** (el formulario que el usuario ve y rellena) y el **Backend** (el script que procesa y guarda los datos).
 
-*   El script de Google (`Code.gs`) recibe los datos a través de la función `doPost(e)`.
-*   Esta función procesa los datos y los añade como una nueva fila en una hoja de cálculo de Google Sheets, que actúa como nuestra base de datos.
+### Frontend (Navegador del Usuario)
 
-## 3. Planes a Futuro
+1.  **Apertura del Formulario:** El usuario abre el archivo `Registro-clientes-87.html` en su navegador.
+2.  **Relleno de Datos:** El usuario completa los campos del formulario.
+3.  **Envío de Datos:** Al hacer clic en "Enviar Registro", el código JavaScript intercepta el envío.
+4.  **Construcción y Envío de la Petición:**
+    *   JavaScript recopila todos los datos del formulario en un objeto.
+    *   Utiliza la función `fetch` para enviar estos datos a la URL del Web App de Google Apps Script mediante una petición `POST`.
+    *   **Nota importante:** Se utiliza `mode: 'no-cors'` en la petición `fetch`. Esto permite que el formulario envíe datos desde cualquier origen (por ejemplo, un archivo local) al script de Google sin ser bloqueado por las políticas de seguridad del navegador (CORS). La desventaja es que el código JavaScript no puede leer la respuesta del servidor para saber si el registro fue 100% exitoso, por lo que asume el éxito si el envío se completa sin errores de red.
+5.  **Feedback al Usuario:** El formulario muestra el mensaje "¡Registro enviado!" y se resetea, listo para un nuevo ingreso.
+
+### Backend (Google Apps Script)
+
+1.  **Recepción de la Petición:** El Web App de Google Apps Script detecta una petición `POST` y ejecuta automáticamente la función `doPost(e)`.
+2.  **Bloqueo para Evitar Conflictos:** Se utiliza `LockService.getScriptLock()` para asegurar que solo una ejecución del script pueda escribir en la hoja de cálculo a la vez. Esto previene que los datos de dos usuarios que envían el formulario simultáneamente se mezclen o corrompan.
+3.  **Acceso a la Hoja de Cálculo:**
+    *   El script se conecta a la hoja de cálculo activa de Google Sheets.
+    *   Busca una hoja llamada "Registros".
+    *   Si la hoja no existe, la crea y le añade una fila de encabezados con los nombres de cada campo.
+4.  **Procesamiento de Datos:** El script extrae los datos JSON que vienen en la petición (`e.postData.contents`) y los convierte en un objeto de JavaScript.
+5.  **Escritura en la Hoja:** Los datos se ordenan en un array (`newRow`) y se añaden como una nueva fila al final de la hoja "Registros" usando `sheet.appendRow(newRow)`.
+6.  **Liberación del Bloqueo:** Finalmente, `lock.releaseLock()` libera el bloqueo, permitiendo que otras peticiones puedan ser procesadas.
+
+## 4. Control de Versiones con Git
+
+Para gestionar el código y los cambios a lo largo del tiempo, se utilizó Git y GitHub. Los pasos principales para subir el proyecto fueron:
+
+1.  **`git status`:** Para revisar qué archivos habían sido modificados.
+2.  **`git add .`:** Para añadir todos los archivos nuevos o modificados al área de preparación.
+3.  **`git commit -m "mensaje descriptivo"`:** Para crear una "instantánea" de los cambios con un mensaje que explica qué se hizo.
+4.  **`git push origin main`:** Para subir todos los commits al repositorio remoto en GitHub.
+
+## 5. Planes a Futuro
 
 Para la siguiente fase del proyecto, nos enfocaremos en la automatización de procesos y en mejorar la gestión de la información de los clientes.
 
@@ -52,9 +85,7 @@ Para la siguiente fase del proyecto, nos enfocaremos en la automatización de pr
     *   Implementar validación de datos en tiempo real.
     *   Realizar pruebas A/B para mejorar la tasa de conversión.
 
-## 4. Plan de Desarrollo (Detallado)
-
-Este documento detalla los pasos para la creación del formulario de registro de clientes y su integración con Google Apps Script.
+## 6. Plan de Desarrollo (Detallado)
 
 *   [X] **Paso 1: Documentación Inicial**: Crear el archivo `DOCUMENTACION.md` y registrar el plan completo.
 *   [X] **Paso 2: Estructura HTML (`Registro-clientes-87.html`)**: Crear el archivo HTML con todos los campos del formulario, la fuente Poppins y la configuración del método `POST`.
