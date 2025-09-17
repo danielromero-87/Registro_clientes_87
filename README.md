@@ -48,7 +48,29 @@ El sistema funciona en dos partes principales: el **Frontend** (el formulario qu
 5.  **Escritura en la Hoja:** Los datos se ordenan en un array (`newRow`) y se añaden como una nueva fila al final de la hoja "Registros" usando `sheet.appendRow(newRow)`.
 6.  **Liberación del Bloqueo:** Finalmente, `lock.releaseLock()` libera el bloqueo, permitiendo que otras peticiones puedan ser procesadas.
 
-## 4. Control de Versiones con Git
+## 4. Historial de Cambios (v1.1)
+
+### Resumen
+En esta actualización se realizaron las siguientes modificaciones clave:
+
+- **Cambio de Campo Principal:** Se reemplazó el campo "Cédula Cliente" por "Número telefónico" para alinearse mejor con las necesidades de contacto del negocio.
+- **Ajuste de Estilos:** Se modificó el tamaño de la imagen del encabezado para que se ajuste correctamente al ancho del formulario, asegurando una apariencia simétrica y profesional.
+- **Corrección de Backend:** Se ajustó la lógica en `Code.gs` para asegurar que los datos enviados desde el formulario (específicamente en formato JSON) sean leídos y procesados correctamente por el script.
+
+### Detalles Técnicos
+
+1.  **Formulario (`Registro-clientes-87.html`):**
+    *   Se actualizó la etiqueta (`label`) y el campo de entrada (`input`) de `clienteCedula` a `clienteTelefono`.
+
+2.  **Hoja de Estilos (`style.css`):**
+    *   Se cambió la propiedad `max-width` de la clase `.header-image` a `100%` para garantizar que la imagen sea responsiva y no exceda el contenedor del formulario.
+
+3.  **Script de Google (`Code.gs`):**
+    *   En la función `doPost`, se actualizó la lista de `headers` para incluir "Número telefónico" en lugar de "Cédula Cliente".
+    *   Se corrigió la forma en que se leen los datos, cambiando de `e.parameter` a `JSON.parse(e.postData.contents)`. Este fue un cambio crucial para interpretar correctamente los datos enviados por el `fetch` del formulario.
+    *   Se actualizó la creación de la nueva fila (`newRow`) para usar `data.clienteTelefono`.
+
+## 5. Control de Versiones con Git
 
 Para gestionar el código y los cambios a lo largo del tiempo, se utilizó Git y GitHub. Los pasos principales para subir el proyecto fueron:
 
@@ -57,7 +79,7 @@ Para gestionar el código y los cambios a lo largo del tiempo, se utilizó Git y
 3.  **`git commit -m "mensaje descriptivo"`:** Para crear una "instantánea" de los cambios con un mensaje que explica qué se hizo.
 4.  **`git push origin main`:** Para subir todos los commits al repositorio remoto en GitHub.
 
-## 5. Planes a Futuro
+## 6. Planes a Futuro
 
 Para la siguiente fase del proyecto, nos enfocaremos en la automatización de procesos y en mejorar la gestión de la información de los clientes.
 
@@ -85,7 +107,7 @@ Para la siguiente fase del proyecto, nos enfocaremos en la automatización de pr
     *   Implementar validación de datos en tiempo real.
     *   Realizar pruebas A/B para mejorar la tasa de conversión.
 
-## 6. Plan de Desarrollo (Detallado)
+## 7. Plan de Desarrollo (Detallado)
 
 *   [X] **Paso 1: Documentación Inicial**: Crear el archivo `DOCUMENTACION.md` y registrar el plan completo.
 *   [X] **Paso 2: Estructura HTML (`Registro-clientes-87.html`)**: Crear el archivo HTML con todos los campos del formulario, la fuente Poppins y la configuración del método `POST`.
