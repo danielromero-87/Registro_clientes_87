@@ -34,9 +34,7 @@ function doPost(e) {
 
   try {
     // --- CONFIGURACIÓN ---
-    // IMPORTANTE: El nombre de tu archivo de Google Sheets.
     var SPREADSHEET_NAME = "Registro_clientes_87"; 
-    // IMPORTANTE: El nombre de la pestaña (hoja) dentro de ese archivo.
     var SHEET_NAME = "Registros";
 
     var doc = SpreadsheetApp.getActiveSpreadsheet();
@@ -47,20 +45,21 @@ function doPost(e) {
       sheet = doc.insertSheet(SHEET_NAME);
       var headers = [
         "Timestamp", "Fecha y Hora", "Sede", "Nombre Asesor", "Fuente", 
-        "Nombre Cliente", "Cédula Cliente", "Necesidad Principal", "Busca / Vende",
+        "Nombre Cliente", "Número telefónico", "Necesidad Principal", "Busca / Vende",
         "Serie del vehículo", "Presupuesto", "Siguiente paso", "Observaciones"
       ];
       sheet.appendRow(headers);
     }
 
-    // Obtiene los datos enviados desde el formulario
-    var data = e.parameter;
+    // **LA CORRECCIÓN CLAVE ESTÁ AQUÍ**
+    // Parsea el texto JSON que viene en el cuerpo de la solicitud POST
+    var data = JSON.parse(e.postData.contents);
 
     // Crea la fila con los datos en el orden de los encabezados
     var newRow = [
       new Date(), // Añade un timestamp automático
       data.fechaHora, data.sede, data.asesor, data.fuente,
-      data.clienteNombre, data.clienteCedula, data.necesidad,
+      data.clienteNombre, data.clienteTelefono, data.necesidad,
       data.tipoVehiculo, data.serieVehiculo, data.presupuesto,
       data.siguientePaso, data.observaciones
     ];
