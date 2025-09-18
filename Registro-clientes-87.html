@@ -38,6 +38,8 @@
                     <option value="Juan sebastian Ortega">Juan sebastian Ortega</option>
                     <option value="Julieth Serrano">Julieth Serrano</option>
                     <option value="Juan Diego Duarte">Juan Diego Duarte</option>
+                    <option value="Jorge Rodriguez">Jorge Rodriguez</option>
+                    <option value="Juan Manuel Rodriguez">Juan Manuel Rodriguez</option>
                 </select>
             </div>
             <div class="form-group">
@@ -51,15 +53,17 @@
                     <option value="Redes Sociales">Redes Sociales</option>
                 </select>
             </div>
-            <div class="form-group-inline">
-                <div class="form-group">
-                    <label for="clienteNombre">Nombre Cliente</label>
-                    <input type="text" id="clienteNombre" name="clienteNombre" required>
-                </div>
-                <div class="form-group">
-                    <label for="clienteTelefono">Número telefónico</label>
-                    <input type="text" id="clienteTelefono" name="clienteTelefono" required>
-                </div>
+            <div class="form-group">
+                <label for="clienteNombre">Nombre Cliente</label>
+                <input type="text" id="clienteNombre" name="clienteNombre" required>
+            </div>
+            <div class="form-group">
+                <label for="clienteTelefono">Número telefónico</label>
+                <input type="text" id="clienteTelefono" name="clienteTelefono" required>
+            </div>
+            <div class="form-group">
+                <label for="clienteCedula">Cédula</label>
+                <input type="text" id="clienteCedula" name="clienteCedula" required>
             </div>
             <div class="form-group">
                 <label for="necesidad">Necesidad Principal</label>
@@ -102,15 +106,46 @@
             </div>
 
             <button type="submit" id="submit-button">Enviar Registro</button>
-            <div id="status-message"></div>
         </form>
     </div>
 
+    <div id="success-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <p id="modal-title">Registro enviado</p>
+            <button type="button" id="close-modal" class="modal-close-button">Entendido</button>
+        </div>
+    </div>
+
     <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbx0wHLqNDqVn9J-vCy1SQEvjfCQOvQiMTJ_d689ycH7_50mBafvl6gEG4WNML2XoV4_AA/exec';
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyc1etXp7k8q0siknJ5DYR2y3xVsaWEKMo78BhIE63DVigAFoOaYrKwKKV8tO0B7UeQhA/exec';
         const form = document.getElementById('registroForm');
         const submitButton = document.getElementById('submit-button');
-        const statusMessage = document.getElementById('status-message');
+        const successModal = document.getElementById('success-modal');
+        const closeModalButton = document.getElementById('close-modal');
+
+        const openSuccessModal = () => {
+            successModal.classList.add('show');
+            successModal.setAttribute('aria-hidden', 'false');
+            closeModalButton.focus();
+        };
+
+        const closeSuccessModal = () => {
+            successModal.classList.remove('show');
+            successModal.setAttribute('aria-hidden', 'true');
+            submitButton.focus();
+        };
+
+        closeModalButton.addEventListener('click', closeSuccessModal);
+        successModal.addEventListener('click', event => {
+            if (event.target === successModal) {
+                closeSuccessModal();
+            }
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && successModal.classList.contains('show')) {
+                closeSuccessModal();
+            }
+        });
 
         form.addEventListener('submit', e => {
             e.preventDefault();
@@ -130,14 +165,12 @@
                 body: JSON.stringify(data)
             })
             .then(() => {
-                statusMessage.style.color = 'green';
-                statusMessage.textContent = '¡Registro enviado! Verifique la hoja de cálculo para confirmar.';
                 form.reset();
+                openSuccessModal();
             })
             .catch(error => {
                 console.error('Error!', error.message);
-                statusMessage.style.color = 'red';
-                statusMessage.textContent = 'Error: No se pudo enviar el formulario. Verifique la conexión.';
+                alert('Error: No se pudo enviar el formulario. Verifique la conexión.');
             })
             .finally(() => {
                 submitButton.disabled = false;

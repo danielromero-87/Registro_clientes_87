@@ -28,13 +28,13 @@ El sistema funciona en dos partes principales: el **Frontend** (el formulario qu
 ### Frontend (Navegador del Usuario)
 
 1.  **Apertura del Formulario:** El usuario abre el archivo `Registro-clientes-87.html` en su navegador.
-2.  **Relleno de Datos:** El usuario completa los campos del formulario.
+2.  **Relleno de Datos:** El usuario completa los campos del formulario, incluyendo la nueva sección de **Cédula** que aparece debajo de los datos de contacto.
 3.  **Envío de Datos:** Al hacer clic en "Enviar Registro", el código JavaScript intercepta el envío.
 4.  **Construcción y Envío de la Petición:**
     *   JavaScript recopila todos los datos del formulario en un objeto.
     *   Utiliza la función `fetch` para enviar estos datos a la URL del Web App de Google Apps Script mediante una petición `POST`.
     *   **Nota importante:** Se utiliza `mode: 'no-cors'` en la petición `fetch`. Esto permite que el formulario envíe datos desde cualquier origen (por ejemplo, un archivo local) al script de Google sin ser bloqueado por las políticas de seguridad del navegador (CORS). La desventaja es que el código JavaScript no puede leer la respuesta del servidor para saber si el registro fue 100% exitoso, por lo que asume el éxito si el envío se completa sin errores de red.
-5.  **Feedback al Usuario:** El formulario muestra el mensaje "¡Registro enviado!" y se resetea, listo para un nuevo ingreso.
+5.  **Feedback al Usuario:** El formulario muestra un cuadro emergente de confirmación accesible con el mensaje "Registro enviado" y se resetea, listo para un nuevo ingreso.
 
 ### Backend (Google Apps Script)
 
@@ -44,20 +44,23 @@ El sistema funciona en dos partes principales: el **Frontend** (el formulario qu
     *   El script se conecta a la hoja de cálculo activa de Google Sheets.
     *   Busca una hoja llamada "Registros".
     *   Si la hoja no existe, la crea y le añade una fila de encabezados con los nombres de cada campo.
+    *   Si la hoja ya existe, asegura que los encabezados incluyan la columna **Cédula** y añade columnas faltantes si es necesario.
 4.  **Procesamiento de Datos:** El script extrae los datos JSON que vienen en la petición (`e.postData.contents`) y los convierte en un objeto de JavaScript.
 5.  **Escritura en la Hoja:** Los datos se ordenan en un array (`newRow`) y se añaden como una nueva fila al final de la hoja "Registros" usando `sheet.appendRow(newRow)`.
 6.  **Liberación del Bloqueo:** Finalmente, `lock.releaseLock()` libera el bloqueo, permitiendo que otras peticiones puedan ser procesadas.
 
-## 4. Historial de Cambios (v1.1)
+## 4. Historial de Cambios
 
-### Resumen
+### v1.1
+
+#### Resumen
 En esta actualización se realizaron las siguientes modificaciones clave:
 
 - **Cambio de Campo Principal:** Se reemplazó el campo "Cédula Cliente" por "Número telefónico" para alinearse mejor con las necesidades de contacto del negocio.
 - **Ajuste de Estilos:** Se modificó el tamaño de la imagen del encabezado para que se ajuste correctamente al ancho del formulario, asegurando una apariencia simétrica y profesional.
 - **Corrección de Backend:** Se ajustó la lógica en `Code.gs` para asegurar que los datos enviados desde el formulario (específicamente en formato JSON) sean leídos y procesados correctamente por el script.
 
-### Detalles Técnicos
+#### Detalles Técnicos
 
 1.  **Formulario (`Registro-clientes-87.html`):**
     *   Se actualizó la etiqueta (`label`) y el campo de entrada (`input`) de `clienteCedula` a `clienteTelefono`.
@@ -69,6 +72,31 @@ En esta actualización se realizaron las siguientes modificaciones clave:
     *   En la función `doPost`, se actualizó la lista de `headers` para incluir "Número telefónico" en lugar de "Cédula Cliente".
     *   Se corrigió la forma en que se leen los datos, cambiando de `e.parameter` a `JSON.parse(e.postData.contents)`. Este fue un cambio crucial para interpretar correctamente los datos enviados por el `fetch` del formulario.
     *   Se actualizó la creación de la nueva fila (`newRow`) para usar `data.clienteTelefono`.
+
+### v1.2
+
+#### Resumen
+En esta versión se introdujeron ajustes para mejorar la captura de datos y la experiencia del usuario:
+
+- **Nuevo campo obligatorio:** Se añadió la sección "Cédula" con su respectivo input debajo de "Número telefónico".
+- **Lista de asesores ampliada:** Se incorporaron las opciones "Jorge Rodriguez" y "Juan Manuel Rodriguez" en el selector de asesores.
+- **Confirmación visual:** Se reemplazó el mensaje plano por un modal accesible que confirma el envío exitoso.
+- **Sincronización con Sheets:** El script ahora garantiza que la hoja incluya la columna "Cédula" antes de registrar cada envío.
+
+#### Detalles Técnicos
+
+1.  **Formulario (`Registro-clientes-87.html`):**
+    *   Se reorganizó la sección de datos del cliente para mostrar los campos en disposición vertical y se añadió el input `clienteCedula`.
+    *   Se agregó un modal de éxito con controles de teclado y clic para cerrarlo.
+    *   Se actualizaron las opciones del selector `asesor` con los nuevos nombres.
+
+2.  **Hoja de Estilos (`style.css`):**
+    *   Se ajustó el espaciado de `.form-group` para la nueva disposición.
+    *   Se añadieron estilos para el modal (`.modal-overlay`, `.modal-content`, `modal-close-button`).
+
+3.  **Script de Google (`Code.gs`):**
+    *   Se creó la función `ensureRegistrosHeaders` para asegurar que la hoja "Registros" tenga todas las columnas esperadas, incluyendo "Cédula".
+    *   Se incluyó el valor `data.clienteCedula` al construir la nueva fila que se inserta en la hoja.
 
 ## 5. Control de Versiones con Git
 

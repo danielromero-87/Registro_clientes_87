@@ -37,19 +37,10 @@ function doPost(e) {
     var SPREADSHEET_NAME = "Registro_clientes_87"; 
     var SHEET_NAME = "Registros";
 
+    ensureRegistrosHeaders();
+
     var doc = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = doc.getSheetByName(SHEET_NAME);
-
-    // Si la hoja "Registros" no existe, la crea y le añade los encabezados
-    if (!sheet) {
-      sheet = doc.insertSheet(SHEET_NAME);
-      var headers = [
-        "Timestamp", "Fecha y Hora", "Sede", "Nombre Asesor", "Fuente", 
-        "Nombre Cliente", "Número telefónico", "Necesidad Principal", "Busca / Vende",
-        "Serie del vehículo", "Presupuesto", "Siguiente paso", "Observaciones"
-      ];
-      sheet.appendRow(headers);
-    }
 
     // **LA CORRECCIÓN CLAVE ESTÁ AQUÍ**
     // Parsea el texto JSON que viene en el cuerpo de la solicitud POST
@@ -59,7 +50,7 @@ function doPost(e) {
     var newRow = [
       new Date(), // Añade un timestamp automático
       data.fechaHora, data.sede, data.asesor, data.fuente,
-      data.clienteNombre, data.clienteTelefono, data.necesidad,
+      data.clienteNombre, data.clienteTelefono, data.clienteCedula, data.necesidad,
       data.tipoVehiculo, data.serieVehiculo, data.presupuesto,
       data.siguientePaso, data.observaciones
     ];
@@ -78,4 +69,25 @@ function doPost(e) {
     // Libera el bloqueo para que otros puedan ejecutar el script
     lock.releaseLock();
   }
+}
+
+function ensureRegistrosHeaders() {
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = doc.getSheetByName("Registros");
+  var headers = [
+    "Timestamp", "Fecha y Hora", "Sede", "Nombre Asesor", "Fuente",
+    "Nombre Cliente", "Número telefónico", "Cédula", "Necesidad Principal", "Busca / Vende",
+    "Serie del vehículo", "Presupuesto", "Siguiente paso", "Observaciones"
+  ];
+
+  if (!sheet) {
+    sheet = doc.insertSheet("Registros");
+  }
+
+  var currentLastColumn = sheet.getLastColumn();
+  if (currentLastColumn < headers.length) {
+    sheet.insertColumnsAfter(currentLastColumn, headers.length - currentLastColumn);
+  }
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 }
