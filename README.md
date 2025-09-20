@@ -98,6 +98,24 @@ En esta versión se introdujeron ajustes para mejorar la captura de datos y la e
     *   Se creó la función `ensureRegistrosHeaders` para asegurar que la hoja "Registros" tenga todas las columnas esperadas, incluyendo "Cédula".
     *   Se incluyó el valor `data.clienteCedula` al construir la nueva fila que se inserta en la hoja.
 
+### v1.3
+
+#### Resumen
+Se fortaleció el registro de vehículos para conservar el orden cuando el usuario agrega varias series en el formulario.
+
+- **Columnas independientes:** El Apps Script ahora distribuye hasta tres selecciones de serie en las columnas `Serie del vehículo`, `Serie del vehículo 2` y `Serie del vehículo 3` en Google Sheets.
+- **Limpieza de datos:** Se normalizan y separan los valores enviados en `serieVehiculo` antes de guardarlos.
+
+#### Detalles Técnicos
+
+1.  **Script de Google (`Code.gs`):**
+    *   La función `doPost` transforma el campo oculto `serieVehiculo` en una lista (`seriesList`) y asigna cada elemento a columnas individuales.
+    *   Se elimina la concatenación previa que guardaba todas las series en una única celda.
+    *   En caso de recibir un solo valor, se mantiene en la columna principal sin afectar las columnas 2 y 3.
+
+2.  **Hoja de cálculo (`Registros`):**
+    *   La función `ensureRegistrosHeaders` sigue garantizando la existencia de las columnas utilizadas, por lo que no se requieren pasos adicionales en la hoja.
+
 ## 5. Control de Versiones con Git
 
 Para gestionar el código y los cambios a lo largo del tiempo, se utilizó Git y GitHub. Los pasos principales para subir el proyecto fueron:

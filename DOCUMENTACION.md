@@ -46,7 +46,7 @@ El sistema funciona en dos partes principales: el **Frontend** (el formulario qu
     *   Si la hoja no existe, la crea y le añade una fila de encabezados con los nombres de cada campo.
     *   Si la hoja ya existe, asegura que la primera fila tenga el encabezado "Cédula" (añade columnas faltantes antes de escribir los datos).
 4.  **Procesamiento de Datos:** El script extrae los datos JSON que vienen en la petición (`e.postData.contents`) y los convierte en un objeto de JavaScript.
-5.  **Escritura en la Hoja:** Los datos se ordenan en un array (`newRow`) —incluyendo `clienteCedula`— y se añaden como una nueva fila al final de la hoja "Registros" usando `sheet.appendRow(newRow)`.
+5.  **Escritura en la Hoja:** Los datos se ordenan en un array (`newRow`) —incluyendo `clienteCedula`— y se añaden como una nueva fila al final de la hoja "Registros" usando `sheet.appendRow(newRow)`. Cuando el campo oculto `serieVehiculo` contiene varias selecciones separadas por punto y coma, el script reparte cada valor en las columnas `Serie del vehículo`, `Serie del vehículo 2` y `Serie del vehículo 3` para mantenerlas individuales.
 6.  **Liberación del Bloqueo:** Finalmente, `lock.releaseLock()` libera el bloqueo, permitiendo que otras peticiones puedan ser procesadas.
 
 ## 4. Actualizaciones Recientes
@@ -55,6 +55,7 @@ El sistema funciona en dos partes principales: el **Frontend** (el formulario qu
 *   Se incorporó un modal de confirmación que aparece tras cada envío exitoso y puede cerrarse con clic o tecla `Escape`.
 *   El listado de asesores incluye ahora a **Jorge Rodriguez** y **Juan Manuel Rodriguez**.
 *   El script de Google Apps Script introduce la función `ensureRegistrosHeaders` para crear/actualizar la columna "Cédula" antes de registrar datos.
+*   Se reorganiza la escritura de series de vehículo para que cada selección se guarde en columnas independientes dentro de Google Sheets.
 
 ## 5. Control de Versiones con Git
 
