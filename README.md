@@ -25,6 +25,20 @@ Esta herramienta se desarrolla con el fin de poder llevar el control de los clie
 
 El sistema funciona en dos partes principales: el **Frontend** (el formulario que el usuario ve y rellena) y el **Backend** (el script que procesa y guarda los datos).
 
+### Guía rápida de ejecución (demo app)
+
+1. **Publica y valida el WebApp o backend:**
+   - Si usas Apps Script, despliega el WebApp como `Cualquiera con el enlace` y comprueba en incógnito que devuelva `prueba({...})` con la URL `https://.../exec?telefono=NUMERO&callback=prueba`.
+   - Si prefieres la API Node, completa `backend/.env`, ejecuta `npm install` y `npm run dev` para exponer `http://localhost:8080/api/clientes`.
+2. **Configura el frontend (`demo app/script.js:4-6`):** define `SERVER_API_URL` cuando uses el backend Node o actualiza `WEBAPP_URL` con la URL `/exec` vigente si consumirás Apps Script.
+3. **Sirve la carpeta `demo app`:** desde la raíz del proyecto ejecuta `python3 -m http.server 8000 -d "demo app"` (u otro servidor estático) y abre `http://localhost:8000/index.html` (la aplicación local).
+
+   ```bash
+   python3 -m http.server 8000 -d "demo app"
+   ```
+4. **Prueba una búsqueda real:** ingresa un teléfono existente; en DevTools → Network confirma que `exec?...callback=clienteCallback_...` responde `200` (Apps Script) o que `GET /api/clientes` devuelve JSON (backend Node).
+5. **Repite tras cada despliegue:** si redeployas Apps Script o cambias credenciales, vuelve a validar el callback y actualiza la constante correspondiente antes de continuar.
+
 ### Frontend (Navegador del Usuario)
 
 1.  **Apertura del Formulario:** El usuario abre el archivo `Registro-clientes-87.html` en su navegador.
@@ -161,3 +175,54 @@ Para la siguiente fase del proyecto, nos enfocaremos en la automatización de pr
 *   [X] **Paso 4: Google Apps Script (`Code.gs`) - Parte 1: Función `doGet`**: Crear el script inicial y la función `doGet(e)` que servirá el archivo HTML como una página web.
 *   [X] **Paso 5: Google Apps Script (`Code.gs`) - Parte 2: Función `doPost`**: Implementar la función `doPost(e)` para recibir los datos enviados desde el formulario.
 *   [X] **Paso 6: Instrucciones Finales**: Proveer un resumen y los pasos para desplegar el proyecto en Google Apps Script.
+
+## 8. Fase 2 – Consulta y depuración de clientes
+
+Esta fase documenta el trabajo para que la **demo app** consulte la información de un cliente desde Google Sheets mediante Google Apps Script y JSONP. Se registran los problemas detectados, las soluciones aplicadas y los comandos ejecutados localmente.
+
+### 8.1 Alcance
+
+- Actualización de `demo app/Code.gs` para parametrizar el ID de la hoja (`SHEET_ID`) y tolerar nombres de pestañas distintos a `Registros`.
+- Ajustes en `demo app/script.js` para apuntar a la nueva URL del WebApp JSONP.
+- Eliminación de cabeceras CORS desde Apps Script (no compatibles con `ContentService`).
+- Verificación del flujo completo sirviendo la carpeta `demo app` con `python3 -m http.server`.
+
+### 8.2 Problemas encontrados
+
+| Error | Causa detectada | Solución |
+| ----- | ---------------- | -------- |
+| `Error: No se pudo cargar el recurso JSONP.` | La WebApp redirigía a login (`302`), provocando `net::ERR_BLOCKED_BY_ORB` en Chrome. | Se redeployó la WebApp como `Cualquiera con el enlace`, se verificó manualmente el callback JSONP y se actualizó `WEBAPP_URL` en `demo app/script.js`. |
+
+#### 8.2.1 Guía para recuperar el JSONP bloqueado
+
+1. **Detectar el síntoma:** El navegador muestra `Error: No se pudo cargar el recurso JSONP.` en `demo app/script.js:183` y la pestaña Network reporta `302` seguido de `net::ERR_BLOCKED_BY_ORB` para `exec?...callback=clienteCallback_...`.
+2. **Confirmar la causa:** Abrir una ventana de incógnito y visitar directamente la URL del WebApp (`https://.../exec?telefono=NUMERO&callback=prueba`). Si aparece la pantalla de login o no se devuelve `prueba({...})`, el despliegue no es público.
+3. **Redplegar el WebApp:** En Apps Script → `Desplegar > Gestionar implementaciones` → `Nueva implementación`. Configurar **Ejecutar como:** tu cuenta y **Quién tiene acceso:** `Cualquiera con el enlace`. Guardar y copiar la nueva URL `/exec`.
+4. **Verificar el callback manualmente:** Antes de volver al frontend, repetir la prueba en incógnito. Debe mostrarse texto plano similar a `prueba({...})`, confirmando que ya no hay redirección.
+5. **Actualizar el frontend:** Sustituir la constante `WEBAPP_URL` en `demo app/script.js:6` con la URL recién generada. Guardar los cambios y recargar la app desde `http://localhost:8000/index.html` con hard reload (Ctrl+Shift+R) para que el navegador tome la nueva URL.
+6. **Validar en la app:** Repetir la búsqueda del teléfono. La petición `exec?...callback=clienteCallback_...` debe responder `200` con contenido `clienteCallback_...({...})` y la tarjeta se renderiza sin errores.
+| `TypeError: output.setHeader is not a function` | `ContentService.createTextOutput` no soporta `setHeader`. | Se retiraron las llamadas a `setHeader` y se mantuvo únicamente `setMimeType`. |
+| `Error interno: No se encontró la hoja "Registros".` | La hoja objetivo tenía un nombre distinto. | Se añadió `SHEET_ID` y, si no existe la pestaña, se usa la primera hoja disponible. |
+| `No se encontró información para este número` | El número no estaba en la columna exacta. | Se verificó el valor en Google Sheets y se probó con registros existentes. |
+
+### 8.3 Comandos ejecutados
+
+```bash
+cd /home/danielromero/Datos/registro_clientes_87
+python3 -m http.server 8000 -d "demo app"  # detener con Ctrl+C
+```
+
+> Si ya estás dentro de `demo app`, ejecuta `python3 -m http.server 8000` sin la opción `-d`.
+
+### 8.4 Pasos de verificación
+
+1. Obtener la URL del WebApp (`/exec`) tras publicar Apps Script.
+2. Probar en incógnito: `https://.../exec?telefono=NUMERO&callback=prueba` y comprobar que responde `prueba({...})`.
+3. Confirmar que `demo app/script.js` contiene la URL vigente en `WEBAPP_URL`.
+4. Levantar el servidor local y abrir `http://localhost:8000/index.html`.
+5. Buscar el número telefónico y validar que los datos correspondan a la hoja.
+
+### 8.5 Notas adicionales
+
+- El backend Node.js (`backend/`) continúa disponible como alternativa cuando la organización no permita WebApps públicas.
+- `demo app/Code.gs` ahora inicia con un bloque que indica copiar y pegar todo el archivo en Apps Script antes de desplegar.

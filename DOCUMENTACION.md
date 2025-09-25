@@ -25,6 +25,20 @@ Esta herramienta se desarrolla con el fin de poder llevar el control de los clie
 
 El sistema funciona en dos partes principales: el **Frontend** (el formulario que el usuario ve y rellena) y el **Backend** (el script que procesa y guarda los datos).
 
+### Guía rápida de ejecución (demo app)
+
+1. **Prepara el backend:**
+   - Apps Script: despliega la WebApp con acceso `Cualquiera con el enlace` y valida en incógnito `https://.../exec?telefono=NUMERO&callback=prueba` para asegurarte de que responde `prueba({...})`.
+   - Backend Node: completa `backend/.env`, ejecuta `npm install` y `npm run dev` para dejar operativo `http://localhost:8080/api/clientes`.
+2. **Actualiza `demo app/script.js`:** coloca la URL correcta en `SERVER_API_URL` o `WEBAPP_URL` según el backend elegido.
+3. **Sirve el frontend:** desde la raíz corre `python3 -m http.server 8000 -d "demo app"` y navega a `http://localhost:8000/index.html` (la app local; usa Ctrl+Shift+R tras cambios).
+
+   ```bash
+   python3 -m http.server 8000 -d "demo app"
+   ```
+4. **Verifica la consulta:** realiza una búsqueda con un número real; en DevTools → Network comprueba que la petición JSONP (`exec?...callback=...`) o REST (`/api/clientes`) responde `200` y contiene los datos esperados.
+5. **Documenta nuevos despliegues:** si se genera otra URL `/exec` o cambian las credenciales del backend Node, repite los pasos 1-4.
+
 ### Frontend (Navegador del Usuario)
 
 1.  **Apertura del Formulario:** El usuario abre el archivo `Registro-clientes-87.html` en su navegador.
@@ -102,3 +116,61 @@ Para la siguiente fase del proyecto, nos enfocaremos en la automatización de pr
 *   [X] **Paso 4: Google Apps Script (`Code.gs`) - Parte 1: Función `doGet`**: Crear el script inicial y la función `doGet(e)` que servirá el archivo HTML como una página web.
 *   [X] **Paso 5: Google Apps Script (`Code.gs`) - Parte 2: Función `doPost`**: Implementar la función `doPost(e)` para recibir los datos enviados desde el formulario.
 *   [X] **Paso 6: Instrucciones Finales**: Proveer un resumen y los pasos para desplegar el proyecto en Google Apps Script.
+
+## 8. Bitácora de la fase de consulta (demo app)
+
+Esta sección resume cronológicamente las acciones realizadas para que la demo app consultara clientes desde Google Sheets usando Apps Script.
+
+### 8.1 Preparación
+
+1. Revisión de `demo app/DOCUMENTACION.md` y `Code.gs` original para entender el flujo JSONP.
+2. Identificación de la URL inicial del WebApp y actualización de `demo app/script.js` cuando se generaron nuevas implementaciones.
+3. Inclusión de la constante `SHEET_ID` en `Code.gs` para apuntar explícitamente a la hoja `1v8qrn9_XiYQWjcqNClUcHqEdYppwVhIL7YqpvBreLEE`.
+
+### 8.2 Incidencias y soluciones
+
+- **`No se pudo cargar el recurso JSONP` / `net::ERR_BLOCKED_BY_ORB`:**
+  - *Causa:* La WebApp redirigía a la pantalla de login al estar restringida.
+  - *Acción:* Se redeployó como `Cualquiera con el enlace`, se confirmó el callback manualmente y se actualizó `WEBAPP_URL`.
+
+#### Procedimiento aplicado paso a paso
+
+1. **Reproducción:** En `demo app/script.js` la promesa JSONP fallaba en `script.onerror`, mostrando `Error: No se pudo cargar el recurso JSONP.`.
+2. **Validación externa:** Se abrió una ventana de incógnito y se visitó `https://script.google.com/macros/s/AKfycbyrJyq5ve6WPo-yPmJIjDWwdO9L6GZ6YLZ22bJBwCmK3y9dzj6MTF-1SpepY9pVMS8l/exec?telefono=3112191576&callback=prueba`. La respuesta devolvió `prueba({...})`, confirmando que la implementación ya era pública; en caso contrario se habría mostrado la pantalla de login.
+3. **Revisión de despliegue:** Se documentó que, si la respuesta no llega en formato `callback({...})`, se debe crear una nueva implementación en Apps Script con acceso `Cualquiera con el enlace` y repetir la verificación en incógnito.
+4. **Actualización del frontend:** Se revisó `demo app/script.js:6` para garantizar que `WEBAPP_URL` apunte a la última URL `/exec`. Tras editar, se recargó `http://localhost:8000/index.html` con Ctrl+Shift+R para limpiar cache.
+5. **Resultado:** La petición `exec?...callback=clienteCallback_...` volvió a responder con `200 OK` y la tarjeta mostró la información del cliente sin errores.
+- **`TypeError: output.setHeader is not a function`:**
+  - *Causa:* `ContentService.createTextOutput` no admite `setHeader`.
+  - *Acción:* Se eliminaron las llamadas a `setHeader` y se dejó solo `setMimeType`.
+- **`Error interno: No se encontró la hoja "Registros"`:**
+  - *Causa:* La pestaña objetivo tenía otro nombre.
+  - *Acción:* Se actualizó `Code.gs` para usar `SHEET_ID` y, en su defecto, tomar la primera hoja disponible.
+- **`No se encontró información para este número`:**
+  - *Causa:* El número consultado no existía en la columna normalizada.
+  - *Acción:* Se verificó la fila en Sheets y se probó con registros reales.
+
+### 8.3 Cambios clave en el código
+
+- `demo app/Code.gs`:
+  - Comentario inicial recordando copiar el archivo completo en Apps Script.
+  - Uso de `SHEET_ID` y fallback a la primera pestaña.
+  - Retiro de cabeceras CORS con `setHeader`.
+- `demo app/script.js`:
+  - Actualización recurrente de la constante `WEBAPP_URL` con la última URL de Apps Script.
+
+### 8.4 Pruebas locales
+
+- Comando usado para servir la carpeta y probar `index.html`:
+  ```bash
+  cd /home/danielromero/Datos/registro_clientes_87
+  python3 -m http.server 8000 -d "demo app"
+  ```
+- Navegación a `http://localhost:8000/index.html` y búsqueda del número `3112191576`.
+- Verificación en DevTools → Network de que la petición `exec?...callback=...` devolviera `script` con el JSON correcto.
+
+### 8.5 Resultados
+
+- Respuesta JSONP confirmada: `prueba({"Timestamp":"2025-09-18 14:57:00", ... })`.
+- La interfaz muestra la ficha con los datos de Google Sheets sin errores de consola.
+- Se dejó documentada la existencia del backend Node.js como alternativa para entornos con políticas más restrictivas.
