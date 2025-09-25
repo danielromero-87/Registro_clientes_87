@@ -3,7 +3,7 @@
  * Permite buscar clientes usando un backend REST o, en su defecto, el WebApp JSONP de Google Apps Script.
  */
 const SERVER_API_URL = ''; // Ejemplo: 'http://localhost:8080/api/clientes'
-const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyrJyq5ve6WPo-yPmJIjDWwdO9L6GZ6YLZ22bJBwCmK3y9dzj6MTF-1SpepY9pVMS8l/exec';
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8laeHEr1-TxqinzaxAoi4yIz12LRfEAwPR7s7kTrpPHQICnC7_oZe-A85ta-uwqk-/exec';
 
 const HEADERS = [
   'Timestamp',
