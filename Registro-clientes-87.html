@@ -61,7 +61,7 @@
             </div>
             <div class="form-group">
                 <label for="clienteTelefono">Número telefónico</label>
-                <input type="text" id="clienteTelefono" name="clienteTelefono" required>
+                <input type="tel" id="clienteTelefono" name="clienteTelefono" required inputmode="tel" autocomplete="tel" placeholder="+57 3123456789" pattern="^[+0-9 ()-]+$" title="Permite prefijos internacionales como +57, +52, etc.">
             </div>
             <div class="form-group">
                 <label for="clienteCedula">Cédula</label>
@@ -124,6 +124,7 @@
                 <select id="siguientePaso" name="siguientePaso" required>
                     <option value="" disabled selected>Seleccione una opción</option>
                     <option value="interesado">Interesado</option>
+                    <option value="no_interesado">No interesado</option>
                     <option value="seguimiento">Seguimiento</option>
                     <option value="llamada">Llamada</option>
                     <option value="agendamiento">Agendamiento</option>
