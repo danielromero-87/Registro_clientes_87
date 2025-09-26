@@ -1,0 +1,485 @@
+/*
+ * components.css
+ * Define componentes reutilizables (botones, formularios, tarjetas, feedback)
+ * siguiendo convenciones BEM para 87 Autos.
+ */
+
+/* ---------- Botones ---------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: var(--font-size-300);
+  line-height: var(--line-height-tight);
+  cursor: pointer;
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
+              box-shadow var(--transition-base),
+              border-color var(--transition-base),
+              transform var(--transition-fast);
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.button--primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.button--primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.button--accent {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--shadow-xs);
+}
+
+.button--accent:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.button--ghost {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.button--ghost:hover:not(:disabled) {
+  background-color: rgba(38, 70, 211, 0.08);
+}
+
+.button--outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-border-strong);
+}
+
+.button--outline:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
+}
+
+.button--full {
+  width: 100%;
+}
+
+.button--icon {
+  font-size: var(--font-size-200);
+}
+
+/* ---------- Formularios ---------- */
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.form-header {
+  display: grid;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.form-group {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.form-group--inline {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: var(--font-size-200);
+  color: var(--color-text-primary);
+}
+
+.form-hint {
+  font-size: var(--font-size-200);
+  color: var(--color-text-tertiary);
+}
+
+.form-control,
+.form select,
+.form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: none;
+  transition: border-color var(--transition-base),
+              box-shadow var(--transition-base),
+              background-color var(--transition-base);
+}
+
+.form-control:focus,
+.form select:focus,
+.form textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-focus-ring);
+  outline: none;
+}
+
+.form-control::placeholder,
+.form textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+textarea.form-control {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: 1rem;
+  inset-block-start: 50%;
+  width: 0.65rem;
+  height: 0.65rem;
+  transform: translateY(-50%) rotate(45deg);
+  border-inline-end: 2px solid var(--color-text-tertiary);
+  border-block-end: 2px solid var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+/* ---------- Tarjetas y contenedores ---------- */
+
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.card--contrast {
+  background: var(--color-surface-strong);
+}
+
+.card-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.card-title {
+  font-size: var(--font-size-500);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.card-subtitle {
+  font-size: var(--font-size-200);
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Feedback ---------- */
+
+.feedback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-200);
+  font-weight: 500;
+  text-align: center;
+  min-height: 2.25rem;
+}
+
+.feedback--success {
+  color: var(--color-success-strong);
+  background-color: var(--color-success-soft);
+  border: 1px solid var(--color-success-border);
+}
+
+.feedback--error {
+  color: var(--color-error-strong);
+  background-color: var(--color-error-soft);
+  border: 1px solid var(--color-error-border);
+}
+
+.feedback--info {
+  color: var(--color-accent);
+  background-color: rgba(229, 9, 20, 0.08);
+  border: 1px solid rgba(229, 9, 20, 0.16);
+}
+
+/* ---------- Badges ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-200);
+  font-weight: 600;
+}
+
+.badge--info {
+  background-color: rgba(229, 9, 20, 0.12);
+  color: var(--color-accent);
+}
+
+.badge--warning {
+  background-color: rgba(249, 169, 20, 0.16);
+  color: #b45309;
+}
+
+.badge--success {
+  background-color: var(--color-success-soft);
+  color: var(--color-success-strong);
+}
+
+/* ---------- Listas de detalles ---------- */
+
+.detail-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.detail-list dt {
+  font-size: var(--font-size-200);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.detail-list dd {
+  margin: 0;
+  font-size: var(--font-size-300);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* ---------- Modal ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+  z-index: 1000;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-md);
+  min-width: min(90vw, 360px);
+  text-align: center;
+}
+
+.modal-title {
+  font-size: var(--font-size-400);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+}
+
+/* ---------- Banner / brand ---------- */
+
+.brand-banner {
+  margin: 0 auto var(--space-3);
+  max-width: 360px;
+}
+
+/* ---------- Selección de vehículos ---------- */
+
+.vehicle-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  min-height: 54px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--color-border-subtle);
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-200);
+}
+
+.vehicle-summary.empty {
+  opacity: 0.85;
+}
+
+.vehicle-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background-color: rgba(229, 9, 20, 0.12);
+  color: var(--color-accent);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-base), transform var(--transition-fast);
+}
+
+.vehicle-tag__remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--font-size-100);
+  line-height: 1;
+}
+
+.vehicle-tag:hover {
+  background-color: rgba(229, 9, 20, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ---------- Tarjeta de cliente ---------- */
+
+.client-card {
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+.client-card.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.client-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../imagenes/marca_agua.png') center/40% no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.client-card__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.client-card__header {
+  position: relative;
+  z-index: 1;
+  margin-bottom: var(--space-2);
+}
+
+.client-card__header .card-title {
+  margin: 0;
+  font-size: var(--font-size-400);
+  color: var(--color-text-primary);
+}
+
+.client-section {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-alt);
+  border: 1px solid rgba(28, 28, 28, 0.06);
+  box-shadow: 0 6px 18px rgba(28, 28, 28, 0.04);
+}
+
+.client-section__title {
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-300);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.client-section__list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.client-section__item {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.client-section__label {
+  font-size: var(--font-size-200);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.client-section__value {
+  font-size: var(--font-size-300);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.client-card__actions {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-2);
+}
+
+.client-card__actions .button {
+  width: 100%;
+}
+
+/* ---------- Estados utilitarios ---------- */
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--color-text-tertiary);
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.stack--lg {
+  gap: var(--space-4);
+}

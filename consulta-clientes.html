@@ -1,226 +1,49 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consulta de Clientes - 87 Autos</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      color-scheme: light;
-      font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-      padding: 24px;
-    }
-
-    main.layout {
-      width: 100%;
-      max-width: 720px;
-    }
-
-    section.card {
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 15px 40px rgba(15, 23, 42, 0.12);
-      padding: 36px;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-      font-weight: 600;
-      font-size: 1.8rem;
-      color: #111827;
-      text-align: center;
-    }
-
-    p.lead {
-      margin: 0 0 24px;
-      text-align: center;
-      color: #4b5563;
-      font-size: 1rem;
-    }
-
-    .nav-actions {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 16px;
-    }
-
-    .nav-actions a {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 18px;
-      border-radius: 10px;
-      background: #2563eb;
-      color: #ffffff;
-      text-decoration: none;
-      font-weight: 600;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .nav-actions a:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
-    }
-
-    form.search-form {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 16px;
-    }
-
-    form.search-form label {
-      width: 100%;
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: #374151;
-    }
-
-    form.search-form input {
-      flex: 1 1 280px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    form.search-form input:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-    }
-
-    form.search-form button {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 10px;
-      background: #2563eb;
-      color: #ffffff;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    form.search-form button:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
-    }
-
-    form.search-form button:disabled {
-      cursor: progress;
-      opacity: 0.7;
-      box-shadow: none;
-    }
-
-    .feedback {
-      min-height: 24px;
-      margin: 0 0 12px;
-      text-align: center;
-      font-size: 0.95rem;
-      color: #1f2937;
-    }
-
-    .feedback.error {
-      color: #dc2626;
-    }
-
-    .feedback.success {
-      color: #059669;
-    }
-
-    article.client-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 24px;
-      background: #f9fafb;
-    }
-
-    article.client-card h2 {
-      margin: 0 0 16px;
-      font-size: 1.3rem;
-      color: #1f2937;
-    }
-
-    dl.details-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-      margin: 0;
-    }
-
-    dl.details-grid dt {
-      font-weight: 600;
-      color: #374151;
-      font-size: 0.9rem;
-    }
-
-    dl.details-grid dd {
-      margin: 4px 0 0;
-      color: #1f2937;
-      font-size: 0.95rem;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    @media (max-width: 540px) {
-      section.card {
-        padding: 24px;
-      }
-
-      form.search-form {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      form.search-form button {
-        width: 100%;
-      }
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/theme.css">
 </head>
-<body>
-  <main class="layout">
-    <section class="card" aria-label="Consulta de clientes">
-      <h1>Consulta de Clientes</h1>
-      <p class="lead">Ingresa un número telefónico para consultar la información almacenada en Google Sheets.</p>
-      <div class="nav-actions">
-        <a href="Registro-clientes-87.html">⬅️ Volver al registro</a>
-      </div>
-      <form id="searchForm" class="search-form" novalidate>
-        <label for="telefono">Número telefónico</label>
-        <input type="text" id="telefono" name="telefono" placeholder="Ej. 3112191576" autocomplete="tel" inputmode="numeric" />
-        <button type="submit" id="searchButton">Buscar</button>
+<body class="app-body">
+  <div class="layout layout--centered">
+    <section class="card layout__panel" aria-label="Consulta de clientes">
+      <header class="form-header">
+        <h1 class="card-title">Consulta de Clientes</h1>
+        <p class="card-subtitle">Ingresa un número telefónico para obtener la ficha almacenada en Google Sheets.</p>
+        <div class="nav-actions">
+          <a class="button button--outline" href="Registro-clientes-87.html">⬅️ Volver al registro</a>
+        </div>
+      </header>
+
+      <form id="searchForm" class="form" novalidate>
+        <div class="form-group">
+          <label for="telefono" class="form-label">Número telefónico</label>
+          <input type="text" id="telefono" name="telefono" class="form-control" placeholder="Ej. 3112191576" autocomplete="tel" inputmode="numeric">
+        </div>
+        <button type="submit" id="searchButton" class="button button--accent">Buscar</button>
       </form>
 
       <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
 
-      <article id="clientCard" class="client-card hidden" aria-live="polite">
-        <h2>Ficha del Cliente</h2>
-        <dl id="clientDetails" class="details-grid"></dl>
+      <article id="clientCard" class="card client-card hidden" aria-live="polite">
+        <header class="client-card__header">
+          <h2 class="card-title">Ficha del Cliente</h2>
+        </header>
+        <div id="clientDetails" class="client-card__content"></div>
+        <div class="client-card__actions">
+          <button type="button" id="newSearchButton" class="button button--outline">Nueva búsqueda</button>
+        </div>
       </article>
     </section>
-  </main>
+  </div>
 
   <script src="app-config.js"></script>
   <script src="demo%20app/script.js"></script>

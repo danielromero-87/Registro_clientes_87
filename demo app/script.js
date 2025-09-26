@@ -25,6 +25,45 @@ const HEADERS = [
   'Observaciones'
 ];
 
+
+
+const CLIENT_SECTIONS = [
+  {
+    title: '🧍 Información Personal',
+    fields: [
+      { key: 'Nombre Cliente', label: 'Nombre' },
+      { key: 'Número telefónico', label: 'Número telefónico', transform: formatTelefonoDisplay },
+      { key: 'Cédula', label: 'Cédula' }
+    ]
+  },
+  {
+    title: '📍 Detalles Comerciales',
+    fields: [
+      { key: 'Fecha y Hora', label: 'Fecha y hora' },
+      { key: 'Sede', label: 'Sede' },
+      { key: 'Nombre Asesor', label: 'Asesor' },
+      { key: 'Fuente', label: 'Fuente' },
+      { key: 'Siguiente paso', label: 'Siguiente paso' }
+    ]
+  },
+  {
+    title: '🚘 Vehículo(s)',
+    fields: [
+      { key: 'Necesidad Principal', label: 'Necesidad' },
+      { key: 'Busca / Vende', label: 'Tipo' },
+      { key: 'Serie del vehículo', label: 'Serie(s)', transform: formatSeries }
+    ]
+  },
+  {
+    title: '💰 Detalles Financieros',
+    fields: [
+      { key: 'Presupuesto', label: 'Presupuesto', transform: formatPresupuesto },
+      { key: 'Observaciones', label: 'Observaciones' }
+    ]
+  }
+];
+
+
 const hasServerApi = Boolean(SERVER_API_URL);
 const form = document.getElementById('searchForm');
 const telefonoInput = document.getElementById('telefono');
@@ -32,6 +71,7 @@ const searchButton = document.getElementById('searchButton');
 const feedback = document.getElementById('feedback');
 const clientCard = document.getElementById('clientCard');
 const clientDetails = document.getElementById('clientDetails');
+const newSearchButton = document.getElementById('newSearchButton');
 
 if (form && telefonoInput && searchButton && feedback && clientCard && clientDetails) {
   form.addEventListener('submit', async event => {
@@ -40,7 +80,7 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
 
     const rawTelefono = telefonoInput.value.trim();
     if (!rawTelefono) {
-      showFeedback('Ingresa un número telefónico antes de buscar.', 'error');
+      showFeedback('❌ Ingresa un número telefónico antes de buscar.', 'error');
       hideClientCard();
       telefonoInput.focus();
       return;
@@ -48,19 +88,29 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
 
     const normalizedTelefono = normalizeTelefono(rawTelefono);
     if (!normalizedTelefono) {
-      showFeedback('El número telefónico solo puede contener dígitos.', 'error');
+      showFeedback('❌ El número telefónico solo puede contener dígitos.', 'error');
       hideClientCard();
       telefonoInput.focus();
       return;
     }
 
     if (!hasServerApi && !WEBAPP_URL) {
-      showFeedback('Configura APP_CONFIG.webAppUrl o APP_CONFIG.serverApiUrl antes de buscar.', 'error');
+      showFeedback('❌ Configura APP_CONFIG.webAppUrl o APP_CONFIG.serverApiUrl antes de buscar.', 'error');
       return;
     }
 
+
     await fetchCliente(normalizedTelefono);
   });
+
+  if (newSearchButton) {
+    newSearchButton.addEventListener('click', () => {
+      hideClientCard();
+      clearFeedback();
+      telefonoInput.value = '';
+      telefonoInput.focus();
+    });
+  }
 } else {
   console.error('No se pudieron inicializar los elementos requeridos de la interfaz.');
 }
@@ -78,11 +128,15 @@ async function fetchCliente(telefono) {
       : await fetchClienteJsonp(telefono);
 
     renderClientDetails(record);
-    showFeedback('Información cargada correctamente.', 'success');
+    showFeedback('✅ Cliente encontrado exitosamente', 'success');
   } catch (error) {
     console.error(error);
     const message = (error && error.message) ? error.message : 'Error al conectar con el servidor.';
-    showFeedback(message, 'error');
+    if (/No se encontró/.test(message)) {
+      showFeedback('❌ No se encontraron registros para este número', 'error');
+    } else {
+      showFeedback(`❌ ${message}`, 'error');
+    }
   } finally {
     setLoading(false);
   }
@@ -196,27 +250,72 @@ function extractRecordOrThrow(payload) {
   return payload;
 }
 
-function renderClientDetails(data) {
-  if (!data || typeof data !== 'object') {
+function renderClientDetails(record) {
+  if (!record || typeof record !== 'object') {
     throw new Error('Respuesta sin datos de cliente.');
   }
 
   clientDetails.innerHTML = '';
 
-  HEADERS.forEach(header => {
-    const rawValue = data[header];
-    const value = header === 'Presupuesto' ? formatPresupuesto(rawValue) : formatGenericValue(rawValue);
+  clientCard.classList.remove('is-visible');
+  clientCard.classList.remove('hidden');
 
-    const dt = document.createElement('dt');
-    dt.textContent = header;
+  CLIENT_SECTIONS.forEach(section => {
+    const sectionEl = document.createElement('section');
+    sectionEl.className = 'client-section';
 
-    const dd = document.createElement('dd');
-    dd.textContent = value || 'Sin información';
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'client-section__title';
+    titleEl.textContent = section.title;
+    sectionEl.appendChild(titleEl);
 
-    clientDetails.append(dt, dd);
+    const listEl = document.createElement('div');
+    listEl.className = 'client-section__list';
+
+    section.fields.forEach(field => {
+      const rawValue = record[field.key];
+      const formatted = field.transform ? field.transform(record, rawValue) : formatGenericValue(rawValue);
+      const displayValue = formatted || 'Sin información';
+
+      const itemEl = document.createElement('div');
+      itemEl.className = 'client-section__item';
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'client-section__label';
+      labelEl.textContent = field.label;
+
+      const valueEl = document.createElement('span');
+      valueEl.className = 'client-section__value';
+      valueEl.textContent = displayValue;
+
+      itemEl.append(labelEl, valueEl);
+      listEl.appendChild(itemEl);
+    });
+
+    sectionEl.appendChild(listEl);
+    clientDetails.appendChild(sectionEl);
   });
 
   clientCard.classList.remove('hidden');
+  requestAnimationFrame(() => clientCard.classList.add('is-visible'));
+}
+
+
+function formatTelefonoDisplay(_record, value) {
+  const cleaned = formatGenericValue(value).replace(/^'+/, '');
+  return cleaned || 'Sin información';
+}
+
+function formatSeries(record) {
+  const candidates = [
+    record['Serie del vehículo'],
+    record['Serie del vehículo 2'],
+    record['Serie del vehículo 3']
+  ];
+  const filtered = candidates
+    .map(value => formatGenericValue(value))
+    .filter(Boolean);
+  return filtered.length ? filtered.join(', ') : 'Sin información';
 }
 
 function formatGenericValue(value) {
@@ -226,7 +325,7 @@ function formatGenericValue(value) {
   return String(value).trim();
 }
 
-function formatPresupuesto(value) {
+function formatPresupuesto(_record, value) {
   if (value === null || value === undefined || value === '') {
     return '';
   }
@@ -256,7 +355,8 @@ function setLoading(isLoading) {
 
 function showFeedback(message, type) {
   feedback.textContent = message;
-  feedback.className = `feedback ${type || ''}`.trim();
+  const modifier = type ? `feedback--${type}` : '';
+  feedback.className = ['feedback', modifier].filter(Boolean).join(' ');
 }
 
 function clearFeedback() {
@@ -265,6 +365,19 @@ function clearFeedback() {
 }
 
 function hideClientCard() {
-  clientCard.classList.add('hidden');
-  clientDetails.innerHTML = '';
+  if (!clientCard) {
+    return;
+  }
+
+  clientCard.classList.remove('is-visible');
+  const finalize = () => {
+    clientCard.classList.add('hidden');
+    clientDetails.innerHTML = '';
+  };
+
+  if (clientCard.classList.contains('hidden')) {
+    finalize();
+  } else {
+    window.setTimeout(finalize, 250);
+  }
 }

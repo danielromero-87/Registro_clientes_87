@@ -73,6 +73,7 @@ python3 -m http.server 8000
 *   Se reorganiza la escritura de series de vehículo para que cada selección se guarde en columnas independientes dentro de Google Sheets.
 *   Se creó `app-config.js` para centralizar las URLs del backend y compartir la configuración entre registro y consulta.
 *   Se añadió `consulta-clientes.html` como interfaz pública de búsqueda por teléfono y un botón de acceso directo desde el formulario de registro.
+*   Se implementó un sistema de diseño modular (`css/base.css`, `css/components.css`, `css/layout.css`, `css/theme.css`) con tokens corporativos, componentes reutilizables y soporte responsive.
 
 ## 5. Control de Versiones con Git
 
@@ -115,7 +116,7 @@ Para la siguiente fase del proyecto, nos enfocaremos en la automatización de pr
 
 *   [X] **Paso 1: Documentación Inicial**: Crear el archivo `DOCUMENTACION.md` y registrar el plan completo.
 *   [X] **Paso 2: Estructura HTML (`Registro-clientes-87.html`)**: Crear el archivo HTML con todos los campos del formulario, la fuente Poppins y la configuración del método `POST`.
-*   [X] **Paso 3: Estilos CSS (`style.css`)**: Crear la hoja de estilos para dar un diseño atractivo al formulario utilizando la paleta de colores definida.
+*   [X] **Paso 3: Sistema de estilos (`css/*.css`)**: Definir tokens, componentes y layouts modulares siguiendo Atomic Design (base, components, layout, theme).
 *   [X] **Paso 4: Google Apps Script (`Code.gs`) - Parte 1: Función `doGet`**: Crear el script inicial y la función `doGet(e)` que servirá el archivo HTML como una página web.
 *   [X] **Paso 5: Google Apps Script (`Code.gs`) - Parte 2: Función `doPost`**: Implementar la función `doPost(e)` para recibir los datos enviados desde el formulario.
 *   [X] **Paso 6: Instrucciones Finales**: Proveer un resumen y los pasos para desplegar el proyecto en Google Apps Script.

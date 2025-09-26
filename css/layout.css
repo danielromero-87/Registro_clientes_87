@@ -1,0 +1,68 @@
+/*
+ * layout.css
+ * Define estructuras de página, contenedores y reglas responsive.
+ */
+
+.app-body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-surface-alt) 0%, var(--color-surface-strong) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5) var(--space-3);
+}
+
+.layout {
+  width: min(100%, var(--container-max-width));
+  margin: 0 auto;
+}
+
+.layout--centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layout__panel {
+  width: 100%;
+}
+
+.nav-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+
+.nav-actions .button {
+  padding-inline: var(--space-3);
+}
+
+.grid-columns {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+@media (max-width: 640px) {
+  .app-body {
+    padding: var(--space-4) var(--space-2);
+  }
+
+  .card {
+    padding: var(--space-3);
+  }
+
+  .form-group--inline {
+    flex-direction: column;
+  }
+}
+
+/* Layout específico para la tabla de detalle en consulta */
+
+.detail-list {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.client-card {
+  margin-top: var(--space-3);
+}

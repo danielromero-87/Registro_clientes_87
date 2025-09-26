@@ -52,6 +52,7 @@ function doPost(e) {
     ensureHeaders_(sheet);
 
     const series = parseSeries_(payload.serieVehiculo);
+    const telefonoRaw = toSafeString_(payload.clienteTelefono);
 
     const row = [
       new Date(),
@@ -60,7 +61,7 @@ function doPost(e) {
       toSafeString_(payload.asesor),
       toSafeString_(payload.fuente),
       toSafeString_(payload.clienteNombre),
-      formatTelefonoForSheet_(payload.clienteTelefono),
+      telefonoRaw,
       toSafeString_(payload.clienteCedula),
       toSafeString_(payload.necesidad),
       toSafeString_(payload.tipoVehiculo),
@@ -73,6 +74,18 @@ function doPost(e) {
     ];
 
     sheet.appendRow(row);
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const phoneRange = sheet.getRange(lastRow, 7);
+      phoneRange.setNumberFormat('@');
+      const sanitizedPhone = telefonoRaw.replace(/^'+/, '');
+      if (sanitizedPhone) {
+        phoneRange.setValue("'" + sanitizedPhone);
+      } else {
+        phoneRange.setValue('');
+      }
+    }
 
     return buildResponse_({ success: true, message: 'Registro guardado exitosamente' });
   } catch (error) {
@@ -134,7 +147,7 @@ function buildResponse_(payload, callback) {
     output.setContent(json);
   }
 
-  return output;
+  return applyCors_(output);
 }
 
 function getSheet_() {
@@ -187,14 +200,33 @@ function normalizeDigits_(value) {
   return String(value || '').replace(/\D/g, '');
 }
 
-function formatTelefonoForSheet_(value) {
-  const digits = normalizeDigits_(value);
-  return digits ? `'${digits}` : toSafeString_(value);
-}
-
 function toSafeString_(value) {
   if (value === null || value === undefined) {
     return '';
   }
   return String(value).trim();
+}
+
+function applyCors_(output) {
+  if (!output) {
+    return output;
+  }
+
+  const headers = [
+    ['Access-Control-Allow-Origin', '*'],
+    ['Access-Control-Allow-Methods', 'GET, POST'],
+    ['Access-Control-Allow-Headers', 'Content-Type']
+  ];
+
+  headers.forEach(function(pair) {
+    const key = pair[0];
+    const value = pair[1];
+    if (typeof output.setHeader === 'function') {
+      try {
+        output.setHeader(key, value);
+      } catch (err) {}
+    }
+  });
+
+  return output;
 }

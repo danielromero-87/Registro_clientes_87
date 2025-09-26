@@ -1,0 +1,85 @@
+/*
+ * theme.css
+ * Paleta corporativa de 87 Autos y variantes (hover, estados, modo oscuro opcional).
+ */
+
+:root {
+  /* Paleta corporativa 87 Autos */
+  --color-primary: #2646d3;          /* Azul principal */
+  --color-primary-hover: #1e38b3;
+  --color-primary-soft: rgba(38, 70, 211, 0.12);
+  --color-on-primary: #ffffff;
+
+  --color-accent: #f95a28;           /* Naranja acción */
+  --color-accent-hover: #d94a1f;
+  --color-on-accent: #ffffff;
+
+  --color-surface: #ffffff;
+  --color-surface-alt: #f5f7ff;
+  --color-surface-strong: #dbe4ff;
+  --color-background: #eef2ff;
+
+  /* Escala cromática afín al azul corporativo */
+  --color-text-primary: #1b2250;
+  --color-text-secondary: #3f4b80;
+  --color-text-tertiary: #5a6ab0;
+  --color-border-subtle: #cdd6ff;
+  --color-border-strong: #94a3e3;
+
+  /* Estados */
+  --color-success: #10b981;
+  --color-success-soft: rgba(16, 185, 129, 0.12);
+  --color-success-border: rgba(16, 185, 129, 0.3);
+  --color-success-strong: #047857;
+
+  --color-error: #dc2626;
+  --color-error-soft: rgba(220, 38, 38, 0.12);
+  --color-error-border: rgba(220, 38, 38, 0.24);
+  --color-error-strong: #b91c1c;
+
+  --color-warning: #facc15;
+
+  --color-focus-ring: rgba(72, 127, 239, 0.32);
+
+  /* Sombras contextuales */
+  --shadow-soft: 0 12px 32px rgba(38, 70, 211, 0.14);
+}
+
+body {
+  background-color: var(--color-background);
+}
+
+.card {
+  background-color: var(--color-surface);
+}
+
+.feedback--info {
+  background-color: rgba(72, 127, 239, 0.12);
+  border-color: rgba(72, 127, 239, 0.28);
+  color: var(--color-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #10172f;
+    --color-surface-alt: #131c38;
+    --color-surface-strong: #1d2a58;
+    --color-background: #0b1126;
+    --color-text-primary: #f5f7ff;
+    --color-text-secondary: #c7d2fe;
+    --color-text-tertiary: #a5b4fc;
+    --color-border-subtle: rgba(199, 210, 254, 0.24);
+    --color-border-strong: rgba(199, 210, 254, 0.4);
+    --color-focus-ring: rgba(72, 127, 239, 0.48);
+    --shadow-soft: 0 18px 48px rgba(7, 11, 26, 0.6);
+  }
+
+  body {
+    background-image: radial-gradient(circle at top, rgba(72, 127, 239, 0.2), transparent 65%);
+  }
+
+  .card {
+    box-shadow: var(--shadow-soft);
+    border-color: rgba(199, 210, 254, 0.18);
+  }
+}

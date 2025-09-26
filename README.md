@@ -80,7 +80,7 @@ En esta actualización se realizaron las siguientes modificaciones clave:
 1.  **Formulario (`Registro-clientes-87.html`):**
     *   Se actualizó la etiqueta (`label`) y el campo de entrada (`input`) de `clienteCedula` a `clienteTelefono`.
 
-2.  **Hoja de Estilos (`style.css`):**
+2.  **Hoja de Estilos (legacy `style.css`):**
     *   Se cambió la propiedad `max-width` de la clase `.header-image` a `100%` para garantizar que la imagen sea responsiva y no exceda el contenedor del formulario.
 
 3.  **Script de Google (`Code.gs`):**
@@ -105,7 +105,7 @@ En esta versión se introdujeron ajustes para mejorar la captura de datos y la e
     *   Se agregó un modal de éxito con controles de teclado y clic para cerrarlo.
     *   Se actualizaron las opciones del selector `asesor` con los nuevos nombres.
 
-2.  **Hoja de Estilos (`style.css`):**
+2.  **Hoja de Estilos (legacy `style.css`):**
     *   Se ajustó el espaciado de `.form-group` para la nueva disposición.
     *   Se añadieron estilos para el modal (`.modal-overlay`, `.modal-content`, `modal-close-button`).
 
@@ -130,6 +130,23 @@ Se fortaleció el registro de vehículos para conservar el orden cuando el usuar
 
 2.  **Hoja de cálculo (`Registros`):**
     *   La función `ensureRegistrosHeaders` sigue garantizando la existencia de las columnas utilizadas, por lo que no se requieren pasos adicionales en la hoja.
+
+### v2.0
+
+#### Resumen
+Implementación del sistema de diseño corporativo modular y alineación visual entre los módulos de registro y consulta.
+
+#### Detalles Técnicos
+
+1.  **Sistema de estilos (`css/base.css`, `css/components.css`, `css/layout.css`, `css/theme.css`):**
+    *   Tokens de color, tipografía y espaciado acordes a la guía de 87 Autos.
+    *   Componentes BEM (botones, formularios, tarjetas, feedback, badges) con estados accesibles y variantes responsive.
+2.  **Formulario (`Registro-clientes-87.html`):**
+    *   Nueva maquetación centrada (`app-body`, `card`) con botones `button--accent` y controles `form-control`.
+    *   Modal de confirmación reforzado y resumen de vehículos con chips interactivos.
+3.  **Consulta (`consulta-clientes.html` y `demo app/index.html`):**
+    *   Tarjetas contrastadas, feedback contextual (`feedback--success`, `feedback--error`) y navegación coherente hacia el registro.
+    *   `demo app/script.js` ajusta los estados para reutilizar el mismo sistema de diseño.
 
 ## 5. Control de Versiones con Git
 
@@ -172,7 +189,7 @@ Para la siguiente fase del proyecto, nos enfocaremos en la automatización de pr
 
 *   [X] **Paso 1: Documentación Inicial**: Crear el archivo `DOCUMENTACION.md` y registrar el plan completo.
 *   [X] **Paso 2: Estructura HTML (`Registro-clientes-87.html`)**: Crear el archivo HTML con todos los campos del formulario, la fuente Poppins y la configuración del método `POST`.
-*   [X] **Paso 3: Estilos CSS (`style.css`)**: Crear la hoja de estilos para dar un diseño atractivo al formulario utilizando la paleta de colores definida.
+*   [X] **Paso 3: Sistema de estilos (`css/*.css`)**: Definir el diseño corporativo modular (base, components, layout, theme) siguiendo Atomic Design.
 *   [X] **Paso 4: Google Apps Script (`Code.gs`) - Parte 1: Función `doGet`**: Crear el script inicial y la función `doGet(e)` que servirá el archivo HTML como una página web.
 *   [X] **Paso 5: Google Apps Script (`Code.gs`) - Parte 2: Función `doPost`**: Implementar la función `doPost(e)` para recibir los datos enviados desde el formulario.
 *   [X] **Paso 6: Instrucciones Finales**: Proveer un resumen y los pasos para desplegar el proyecto en Google Apps Script.

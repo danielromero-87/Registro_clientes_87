@@ -1,186 +1,231 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Registro de Clientes</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Clientes - 87 Autos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/theme.css">
 </head>
-<body>
-    <div class="form-container">
-        <form id="registroForm"> <!-- El 'action' ya no es necesario -->
-            <img src="imagenes/MEMBRETE_HEADER.png" alt="Membrete" class="header-image">
-            <h2>Registro de Oportunidad</h2>
-
-            <button type="button" class="search-button" id="open-search">
-                🔍 Buscar cliente
-            </button>
-
-            <!-- Todos los campos del formulario van aquí, sin cambios -->
-            <div class="form-group">
-                <label for="fechaHora">Fecha y Hora</label>
-                <input type="datetime-local" id="fechaHora" name="fechaHora" required>
-            </div>
-            <div class="form-group">
-                <label for="sede">Sede</label>
-                <select id="sede" name="sede" required>
-                    <option value="" disabled selected>Seleccione una sede</option>
-                    <option value="Calleja">Calleja</option>
-                    <option value="San patricio">San patricio</option>
-                    <option value="Santa Barbara">Santa Barbara</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="asesor">Nombre Asesor</label>
-                <select id="asesor" name="asesor" required>
-                    <option value="" disabled selected>Seleccione un asesor</option>
-                    <option value="Jhon Abril">Jhon Abril</option>
-                    <option value="Marco Loaiza">Marco Loaiza</option>
-                    <option value="Juan sebastian Ortega">Juan sebastian Ortega</option>
-                    <option value="Yulieth Serrano">Yulieth Serrano</option>
-                    <option value="Juan Diego Duarte">Juan Diego Duarte</option>
-                    <option value="Jorge Rodriguez">Jorge Rodriguez</option>
-                    <option value="Juan Manuel Rodriguez">Juan Manuel Rodriguez</option>
-                    <option value="Martin Santamaria">Martin Santamaria</option>
-                    <option value="Juan Esteban Vargas">Juan Esteban Vargas</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="fuente">Fuente</label>
-                <select id="fuente" name="fuente" required>
-                    <option value="" disabled selected>Seleccione una fuente</option>
-                    <option value="Trafico">Trafico</option>
-                    <option value="Asesor">Asesor</option>
-                    <option value="Escala">Escala</option>
-                    <option value="Consignación JP">Consignación JP</option>
-                    <option value="Redes Sociales">Redes Sociales</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="clienteNombre">Nombre Cliente</label>
-                <input type="text" id="clienteNombre" name="clienteNombre" required>
-            </div>
-            <div class="form-group">
-                <label for="clienteTelefono">Número telefónico</label>
-                <input type="tel" id="clienteTelefono" name="clienteTelefono" required inputmode="tel" autocomplete="tel" placeholder="+57 3123456789" pattern="^[+0-9 ()-]+$" title="Permite prefijos internacionales como +57, +52, etc.">
-            </div>
-            <div class="form-group">
-                <label for="clienteCedula">Cédula</label>
-                <input type="text" id="clienteCedula" name="clienteCedula">
-            </div>
-            <div class="form-group">
-                <label for="necesidad">Necesidad Principal</label>
-                <select id="necesidad" name="necesidad" required>
-                    <option value="" disabled selected>Seleccione una necesidad</option>
-                    <option value="Compra">Compra</option>
-                    <option value="Vende">Vende</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="tipoVehiculo">Busca / Vende</label>
-                <select id="tipoVehiculo" name="tipoVehiculo" required>
-                    <option value="" disabled selected>Seleccione un tipo</option>
-                    <option value="Carro">Carro</option>
-                    <option value="Camioneta">Camioneta</option>
-                    <option value="Moto">Moto</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="marcaVehiculo">Marca del vehículo</label>
-                <select id="marcaVehiculo" name="marcaVehiculo">
-                    <option value="" disabled selected>Seleccione una marca</option>
-                </select>
-            </div>
-            <div class="form-group hidden" id="serieVehiculoGroup">
-                <label for="serieVehiculoSelect">Serie del vehículo</label>
-                <select id="serieVehiculoSelect" name="serieVehiculoSelect" disabled>
-                    <option value="" disabled selected>Seleccione una serie</option>
-                </select>
-            </div>
-            <div class="form-group hidden" id="modeloVehiculoGroup">
-                <label for="modeloVehiculoSelect">Modelo específico</label>
-                <select id="modeloVehiculoSelect" name="modeloVehiculoSelect" disabled>
-                    <option value="" disabled selected>Seleccione un modelo</option>
-                </select>
-                <input type="text" id="modeloVehiculoCustom" name="modeloVehiculoCustom" class="hidden" placeholder="Especifica el modelo...">
-            </div>
-            <div class="form-group hidden" id="serieVehiculoManualGroup">
-                <label for="serieVehiculoManual">Serie del vehículo</label>
-                <input type="text" id="serieVehiculoManual" name="serieVehiculoManual" placeholder="Especifica la serie y modelo...">
-            </div>
-            <div class="form-group">
-                <button type="button" id="addVehiculoButton" class="add-vehicle-button" disabled>Agregar selección</button>
-            </div>
-            <div class="form-group">
-                <label for="selectedVehiculosContainer">Vehículos seleccionados</label>
-                <div id="selectedVehiculosContainer" class="vehicle-summary-container" aria-live="polite">Sin vehículos seleccionados.</div>
-            </div>
-            <input type="hidden" id="serieVehiculo" name="serieVehiculo">
-            <div class="form-group">
-                <label for="presupuesto">Presupuesto</label>
-                <input type="number" id="presupuesto" name="presupuesto">
-            </div>
-            <div class="form-group">
-                <label for="siguientePaso">Siguiente paso</label>
-                <select id="siguientePaso" name="siguientePaso" required>
-                    <option value="" disabled selected>Seleccione una opción</option>
-                    <option value="interesado">Interesado</option>
-                    <option value="no_interesado">No interesado</option>
-                    <option value="seguimiento">Seguimiento</option>
-                    <option value="llamada">Llamada</option>
-                    <option value="agendamiento">Agendamiento</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="observaciones">Observaciones</label>
-                <textarea id="observaciones" name="observaciones" rows="4"></textarea>
-            </div>
-
-            <button type="submit" id="submit-button">Enviar Registro</button>
-        </form>
-    </div>
-
-    <div id="success-modal" class="modal-overlay" aria-hidden="true">
-        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <p id="modal-title">Registro enviado</p>
-            <button type="button" id="close-modal" class="modal-close-button">Entendido</button>
+<body class="app-body">
+  <div class="layout layout--centered">
+    <section class="card layout__panel">
+      <form id="registroForm" class="form stack stack--lg" novalidate>
+        <div class="form-header">
+          <img src="imagenes/MEMBRETE_HEADER.png" alt="Membrete corporativo 87 Autos" class="brand-banner" loading="lazy">
+          <div class="stack">
+            <h1 class="card-title">Registro de Oportunidad</h1>
+            <p class="card-subtitle">Completa la información de la visita para que el equipo haga seguimiento oportuno.</p>
+          </div>
+          <button type="button" class="button button--outline button--icon" id="open-search">
+            🔍 Buscar Cliente
+          </button>
         </div>
+
+        <div class="form-group">
+          <label for="fechaHora" class="form-label">Fecha y Hora</label>
+          <input type="datetime-local" id="fechaHora" name="fechaHora" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label for="sede" class="form-label">Sede</label>
+          <div class="select-wrapper">
+            <select id="sede" name="sede" class="form-control" required>
+              <option value="" disabled selected>Seleccione una sede</option>
+              <option value="Calleja">Calleja</option>
+              <option value="San patricio">San Patricio</option>
+              <option value="Santa Barbara">Santa Bárbara</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="asesor" class="form-label">Nombre Asesor</label>
+          <div class="select-wrapper">
+            <select id="asesor" name="asesor" class="form-control" required>
+              <option value="" disabled selected>Seleccione un asesor</option>
+              <option value="Jhon Abril">Jhon Abril</option>
+              <option value="Marco Loaiza">Marco Loaiza</option>
+              <option value="Juan Sebastián Ortega">Juan Sebastián Ortega</option>
+              <option value="Yulieth Serrano">Yulieth Serrano</option>
+              <option value="Juan Diego Duarte">Juan Diego Duarte</option>
+              <option value="Jorge Rodríguez">Jorge Rodríguez</option>
+              <option value="Juan Manuel Rodríguez">Juan Manuel Rodríguez</option>
+              <option value="Martín Santamaría">Martín Santamaría</option>
+              <option value="Juan Esteban Vargas">Juan Esteban Vargas</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fuente" class="form-label">Fuente</label>
+          <div class="select-wrapper">
+            <select id="fuente" name="fuente" class="form-control" required>
+              <option value="" disabled selected>Seleccione una fuente</option>
+              <option value="Trafico">Tráfico</option>
+              <option value="Asesor">Asesor</option>
+              <option value="Escala">Escala</option>
+              <option value="Consignación JP">Consignación JP</option>
+              <option value="Redes Sociales">Redes Sociales</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="clienteNombre" class="form-label">Nombre Cliente</label>
+          <input type="text" id="clienteNombre" name="clienteNombre" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label for="clienteTelefono" class="form-label">Número telefónico</label>
+          <input type="tel" id="clienteTelefono" name="clienteTelefono" class="form-control" required inputmode="tel" autocomplete="tel" placeholder="+57 3123456789" pattern="^[+0-9 ()-]+$" title="Permite prefijos internacionales como +57, +52, etc.">
+        </div>
+
+        <div class="form-group">
+          <label for="clienteCedula" class="form-label">Cédula</label>
+          <input type="text" id="clienteCedula" name="clienteCedula" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="necesidad" class="form-label">Necesidad Principal</label>
+          <div class="select-wrapper">
+            <select id="necesidad" name="necesidad" class="form-control" required>
+              <option value="" disabled selected>Seleccione una necesidad</option>
+              <option value="Compra">Compra</option>
+              <option value="Vende">Vende</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="tipoVehiculo" class="form-label">Busca / Vende</label>
+          <div class="select-wrapper">
+            <select id="tipoVehiculo" name="tipoVehiculo" class="form-control" required>
+              <option value="" disabled selected>Seleccione un tipo</option>
+              <option value="Carro">Carro</option>
+              <option value="Camioneta">Camioneta</option>
+              <option value="Moto">Moto</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="marcaVehiculo" class="form-label">Marca del vehículo</label>
+          <div class="select-wrapper">
+            <select id="marcaVehiculo" name="marcaVehiculo" class="form-control">
+              <option value="" disabled selected>Seleccione una marca</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="serieVehiculoGroup">
+          <label for="serieVehiculoSelect" class="form-label">Serie del vehículo</label>
+          <div class="select-wrapper">
+            <select id="serieVehiculoSelect" name="serieVehiculoSelect" class="form-control" disabled>
+              <option value="" disabled selected>Seleccione una serie</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="modeloVehiculoGroup">
+          <label for="modeloVehiculoSelect" class="form-label">Modelo específico</label>
+          <div class="select-wrapper">
+            <select id="modeloVehiculoSelect" name="modeloVehiculoSelect" class="form-control" disabled>
+              <option value="" disabled selected>Seleccione un modelo</option>
+            </select>
+          </div>
+          <input type="text" id="modeloVehiculoCustom" name="modeloVehiculoCustom" class="form-control hidden" placeholder="Especifica el modelo...">
+        </div>
+
+        <div class="form-group hidden" id="serieVehiculoManualGroup">
+          <label for="serieVehiculoManual" class="form-label">Serie del vehículo</label>
+          <input type="text" id="serieVehiculoManual" name="serieVehiculoManual" class="form-control" placeholder="Especifica la serie y modelo...">
+        </div>
+
+        <div class="form-group">
+          <button type="button" id="addVehiculoButton" class="button button--primary" disabled>Agregar selección</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="selectedVehiculosContainer">Vehículos seleccionados</label>
+          <div id="selectedVehiculosContainer" class="vehicle-summary" aria-live="polite">Sin vehículos seleccionados.</div>
+        </div>
+
+        <input type="hidden" id="serieVehiculo" name="serieVehiculo">
+
+        <div class="form-group">
+          <label for="presupuesto" class="form-label">Presupuesto</label>
+          <input type="number" id="presupuesto" name="presupuesto" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="siguientePaso" class="form-label">Siguiente paso</label>
+          <div class="select-wrapper">
+            <select id="siguientePaso" name="siguientePaso" class="form-control" required>
+              <option value="" disabled selected>Seleccione una opción</option>
+              <option value="interesado">Interesado</option>
+              <option value="no_interesado">No interesado</option>
+              <option value="seguimiento">Seguimiento</option>
+              <option value="llamada">Llamada</option>
+              <option value="agendamiento">Agendamiento</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="observaciones" class="form-label">Observaciones</label>
+          <textarea id="observaciones" name="observaciones" class="form-control" rows="4"></textarea>
+        </div>
+
+        <button type="submit" id="submit-button" class="button button--accent button--full">Enviar registro</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="success-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <p id="modal-title" class="modal-title">Registro enviado</p>
+      <button type="button" id="close-modal" class="button button--primary button--full">Entendido</button>
     </div>
-    <script src="app-config.js"></script>
-    <script>
-        const { webAppUrl = '' } = window.APP_CONFIG || {};
-        const scriptURL = webAppUrl.trim();
-        const form = document.getElementById('registroForm');
-        const submitButton = document.getElementById('submit-button');
-        const successModal = document.getElementById('success-modal');
-        const closeModalButton = document.getElementById('close-modal');
-        const tipoVehiculoSelect = document.getElementById('tipoVehiculo');
-        const vehicleBrandSelect = document.getElementById('marcaVehiculo');
-        const vehicleSeriesGroup = document.getElementById('serieVehiculoGroup');
-        const vehicleSeriesSelect = document.getElementById('serieVehiculoSelect');
-        const vehicleModelGroup = document.getElementById('modeloVehiculoGroup');
-        const vehicleModelSelect = document.getElementById('modeloVehiculoSelect');
-        const vehicleModelCustomInput = document.getElementById('modeloVehiculoCustom');
-        const vehicleManualGroup = document.getElementById('serieVehiculoManualGroup');
-        const vehicleManualInput = document.getElementById('serieVehiculoManual');
-        const serieVehiculoHiddenInput = document.getElementById('serieVehiculo');
-        const addVehicleButton = document.getElementById('addVehiculoButton');
-        const selectedVehiclesContainer = document.getElementById('selectedVehiculosContainer');
-        const openSearchButton = document.getElementById('open-search');
+  </div>
 
-        const MANUAL_OPTION_VALUE = '__manual__';
-        const OTHER_MODEL_VALUE = '__other_model__';
+  <script src="app-config.js"></script>
+  <script>
+    const { webAppUrl = '' } = window.APP_CONFIG || {};
+    const scriptURL = webAppUrl.trim();
+    const form = document.getElementById('registroForm');
+    const submitButton = document.getElementById('submit-button');
+    const successModal = document.getElementById('success-modal');
+    const closeModalButton = document.getElementById('close-modal');
+    const tipoVehiculoSelect = document.getElementById('tipoVehiculo');
+    const vehicleBrandSelect = document.getElementById('marcaVehiculo');
+    const vehicleSeriesGroup = document.getElementById('serieVehiculoGroup');
+    const vehicleSeriesSelect = document.getElementById('serieVehiculoSelect');
+    const vehicleModelGroup = document.getElementById('modeloVehiculoGroup');
+    const vehicleModelSelect = document.getElementById('modeloVehiculoSelect');
+    const vehicleModelCustomInput = document.getElementById('modeloVehiculoCustom');
+    const vehicleManualGroup = document.getElementById('serieVehiculoManualGroup');
+    const vehicleManualInput = document.getElementById('serieVehiculoManual');
+    const serieVehiculoHiddenInput = document.getElementById('serieVehiculo');
+    const addVehicleButton = document.getElementById('addVehiculoButton');
+    const selectedVehiclesContainer = document.getElementById('selectedVehiculosContainer');
+    const openSearchButton = document.getElementById('open-search');
 
-        let selectedVehicles = [];
+    const MANUAL_OPTION_VALUE = '__manual__';
+    const OTHER_MODEL_VALUE = '__other_model__';
 
-        if (openSearchButton) {
-            openSearchButton.addEventListener('click', () => {
-                window.location.href = 'consulta-clientes.html';
-            });
-        }
+    let selectedVehicles = [];
+
+    if (openSearchButton) {
+      openSearchButton.addEventListener('click', () => {
+        window.location.href = 'consulta-clientes.html';
+      });
+    }
 
         const VEHICLE_CATALOG = {
             bmwAutos: {
@@ -952,7 +997,7 @@
                     tagButton.className = 'vehicle-tag';
                     tagButton.textContent = item.label;
                     const removeIcon = document.createElement('span');
-                    removeIcon.className = 'vehicle-tag-remove';
+                    removeIcon.className = 'vehicle-tag__remove';
                     removeIcon.setAttribute('aria-hidden', 'true');
                     removeIcon.textContent = '×';
                     tagButton.appendChild(removeIcon);
@@ -1158,12 +1203,6 @@
 
         form.addEventListener('submit', e => {
             e.preventDefault();
-
-            if (!scriptURL) {
-                alert('No se ha configurado la URL del WebApp. Actualiza app-config.js.');
-                return;
-            }
-
             submitButton.disabled = true;
             submitButton.textContent = 'Enviando...';
 
@@ -1194,7 +1233,7 @@
             })
             .finally(() => {
                 submitButton.disabled = false;
-                submitButton.textContent = 'Enviar Registro';
+                submitButton.textContent = 'Enviar registro';
             });
         });
     </script>
