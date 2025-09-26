@@ -2,8 +2,9 @@
  * script.js
  * Permite buscar clientes usando un backend REST o, en su defecto, el WebApp JSONP de Google Apps Script.
  */
-const SERVER_API_URL = ''; // Ejemplo: 'http://localhost:8080/api/clientes'
-const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8laeHEr1-TxqinzaxAoi4yIz12LRfEAwPR7s7kTrpPHQICnC7_oZe-A85ta-uwqk-/exec';
+const CONFIG = window.APP_CONFIG || {};
+const SERVER_API_URL = (CONFIG.serverApiUrl || '').trim();
+const WEBAPP_URL = (CONFIG.webAppUrl || '').trim();
 
 const HEADERS = [
   'Timestamp',
@@ -24,8 +25,7 @@ const HEADERS = [
   'Observaciones'
 ];
 
-const hasServerApi = Boolean(SERVER_API_URL && SERVER_API_URL.trim());
-
+const hasServerApi = Boolean(SERVER_API_URL);
 const form = document.getElementById('searchForm');
 const telefonoInput = document.getElementById('telefono');
 const searchButton = document.getElementById('searchButton');
@@ -54,8 +54,8 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
       return;
     }
 
-    if (!hasServerApi && (!WEBAPP_URL || WEBAPP_URL.includes('PEGAR_AQUI_LA_URL_DEL_WEBAPP'))) {
-      showFeedback('Configura WEBAPP_URL o SERVER_API_URL antes de realizar la búsqueda.', 'error');
+    if (!hasServerApi && !WEBAPP_URL) {
+      showFeedback('Configura APP_CONFIG.webAppUrl o APP_CONFIG.serverApiUrl antes de buscar.', 'error');
       return;
     }
 
@@ -76,11 +76,6 @@ async function fetchCliente(telefono) {
     const record = hasServerApi
       ? await fetchClienteRest(telefono)
       : await fetchClienteJsonp(telefono);
-
-    if (!record) {
-      showFeedback('No se recibió información del servidor.', 'error');
-      return;
-    }
 
     renderClientDetails(record);
     showFeedback('Información cargada correctamente.', 'success');
@@ -106,25 +101,20 @@ async function fetchClienteRest(telefono) {
   const body = await safeParseJson(response);
 
   if (!response.ok) {
-    const message = body?.error || `Error ${response.status}`;
+    const message = (body && body.error) ? body.error : `Error ${response.status}`;
     throw new Error(message);
   }
 
-  if (!body || typeof body !== 'object' || !body.data) {
-    throw new Error('No se recibió información del servidor.');
-  }
-
-  return body.data;
+  return extractRecordOrThrow(body);
 }
 
 function buildServerApiUrl(telefono) {
-  const trimmed = SERVER_API_URL.trim();
-  if (!trimmed) {
+  if (!SERVER_API_URL) {
     throw new Error('SERVER_API_URL no está configurada.');
   }
 
   try {
-    const url = new URL(trimmed, window.location.origin);
+    const url = new URL(SERVER_API_URL, window.location.origin);
     url.searchParams.set('telefono', telefono);
     return url.toString();
   } catch (_error) {
@@ -163,19 +153,14 @@ function fetchClienteJsonp(telefono) {
       reject(new Error('Tiempo de espera agotado.'));
     }, 10000);
 
-    window[callbackName] = data => {
+    window[callbackName] = payload => {
       cleanup();
-      if (!data) {
-        reject(new Error('No se recibió información del servidor.'));
-        return;
+      try {
+        const record = extractRecordOrThrow(payload);
+        resolve(record);
+      } catch (error) {
+        reject(error);
       }
-
-      if (data.error) {
-        reject(new Error(data.error));
-        return;
-      }
-
-      resolve(data);
     };
 
     script.onerror = () => {
@@ -187,7 +172,35 @@ function fetchClienteJsonp(telefono) {
   });
 }
 
+function extractRecordOrThrow(payload) {
+  if (!payload) {
+    throw new Error('No se recibió información del servidor.');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'success')) {
+    if (!payload.success) {
+      throw new Error(payload.error || 'Solicitud rechazada por el servidor.');
+    }
+
+    if (!payload.data) {
+      throw new Error('No se encontró información para este número.');
+    }
+
+    return payload.data;
+  }
+
+  if ('data' in payload && payload.data) {
+    return payload.data;
+  }
+
+  return payload;
+}
+
 function renderClientDetails(data) {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Respuesta sin datos de cliente.');
+  }
+
   clientDetails.innerHTML = '';
 
   HEADERS.forEach(header => {

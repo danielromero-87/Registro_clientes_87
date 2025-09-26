@@ -30,12 +30,12 @@ El sistema funciona en dos partes principales: el **Frontend** (el formulario qu
 1. **Publica y valida el WebApp o backend:**
    - Si usas Apps Script, despliega el WebApp como `Cualquiera con el enlace` y comprueba en incógnito que devuelva `prueba({...})` con la URL `https://.../exec?telefono=NUMERO&callback=prueba`.
    - Si prefieres la API Node, completa `backend/.env`, ejecuta `npm install` y `npm run dev` para exponer `http://localhost:8080/api/clientes`.
-2. **Configura el frontend (`demo app/script.js:4-6`):** define `SERVER_API_URL` cuando uses el backend Node o actualiza `WEBAPP_URL` con la URL `/exec` vigente si consumirás Apps Script.
-3. **Sirve la carpeta `demo app`:** desde la raíz del proyecto ejecuta `python3 -m http.server 8000 -d "demo app"` (u otro servidor estático) y abre `http://localhost:8000/index.html` (la aplicación local).
+2. **Configura `app-config.js`:** define `webAppUrl` con la URL `/exec` vigente (Apps Script) y, si aplica, `serverApiUrl` para el backend Node. Ambas interfaces consumen estos valores.
+3. **Sirve el frontend:** desde la raíz ejecuta `python3 -m http.server 8000` (u otro servidor estático) y abre `http://localhost:8000/Registro-clientes-87.html` para registrar o `http://localhost:8000/consulta-clientes.html` para consultar.
 
-   ```bash
-   python3 -m http.server 8000 -d "demo app"
-   ```
+```bash
+python3 -m http.server 8000
+```
 4. **Prueba una búsqueda real:** ingresa un teléfono existente; en DevTools → Network confirma que `exec?...callback=clienteCallback_...` responde `200` (Apps Script) o que `GET /api/clientes` devuelve JSON (backend Node).
 5. **Repite tras cada despliegue:** si redeployas Apps Script o cambias credenciales, vuelve a validar el callback y actualiza la constante correspondiente antes de continuar.
 
@@ -49,6 +49,7 @@ El sistema funciona en dos partes principales: el **Frontend** (el formulario qu
     *   Utiliza la función `fetch` para enviar estos datos a la URL del Web App de Google Apps Script mediante una petición `POST`.
     *   **Nota importante:** Se utiliza `mode: 'no-cors'` en la petición `fetch`. Esto permite que el formulario envíe datos desde cualquier origen (por ejemplo, un archivo local) al script de Google sin ser bloqueado por las políticas de seguridad del navegador (CORS). La desventaja es que el código JavaScript no puede leer la respuesta del servidor para saber si el registro fue 100% exitoso, por lo que asume el éxito si el envío se completa sin errores de red.
 5.  **Feedback al Usuario:** El formulario muestra un cuadro emergente de confirmación accesible con el mensaje "Registro enviado" y se resetea, listo para un nuevo ingreso.
+6.  **Acceso rápido a consultas:** El botón "Buscar cliente" abre `consulta-clientes.html` para revisar registros sin salir del flujo.
 
 ### Backend (Google Apps Script)
 

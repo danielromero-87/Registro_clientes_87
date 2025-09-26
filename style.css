@@ -35,6 +35,27 @@ body {
     max-width: 700px;
 }
 
+.search-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0 24px;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--primary-color);
+    color: var(--text-on-dark);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.search-button:hover {
+    background-color: var(--highlight-color);
+    transform: translateY(-1px);
+}
+
 h2 {
     color: var(--primary-color);
     text-align: center;

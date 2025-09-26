@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Consulta de Clientes</title>
+  <title>Consulta de Clientes - 87 Autos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* Estilos básicos para una tarjeta limpia y centrada */
     :root {
       color-scheme: light;
       font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -53,6 +52,30 @@
       text-align: center;
       color: #4b5563;
       font-size: 1rem;
+    }
+
+    .nav-actions {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .nav-actions a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .nav-actions a:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
     }
 
     form.search-form {
@@ -181,7 +204,9 @@
     <section class="card" aria-label="Consulta de clientes">
       <h1>Consulta de Clientes</h1>
       <p class="lead">Ingresa un número telefónico para consultar la información almacenada en Google Sheets.</p>
-
+      <div class="nav-actions">
+        <a href="Registro-clientes-87.html">⬅️ Volver al registro</a>
+      </div>
       <form id="searchForm" class="search-form" novalidate>
         <label for="telefono">Número telefónico</label>
         <input type="text" id="telefono" name="telefono" placeholder="Ej. 3112191576" autocomplete="tel" inputmode="numeric" />
@@ -197,7 +222,7 @@
     </section>
   </main>
 
-  <script src="../app-config.js"></script>
-  <script src="script.js"></script>
+  <script src="app-config.js"></script>
+  <script src="demo%20app/script.js"></script>
 </body>
 </html>

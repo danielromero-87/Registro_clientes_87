@@ -15,6 +15,10 @@
             <img src="imagenes/MEMBRETE_HEADER.png" alt="Membrete" class="header-image">
             <h2>Registro de Oportunidad</h2>
 
+            <button type="button" class="search-button" id="open-search">
+                🔍 Buscar cliente
+            </button>
+
             <!-- Todos los campos del formulario van aquí, sin cambios -->
             <div class="form-group">
                 <label for="fechaHora">Fecha y Hora</label>
@@ -145,9 +149,10 @@
             <button type="button" id="close-modal" class="modal-close-button">Entendido</button>
         </div>
     </div>
-
+    <script src="app-config.js"></script>
     <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyc1etXp7k8q0siknJ5DYR2y3xVsaWEKMo78BhIE63DVigAFoOaYrKwKKV8tO0B7UeQhA/exec';
+        const { webAppUrl = '' } = window.APP_CONFIG || {};
+        const scriptURL = webAppUrl.trim();
         const form = document.getElementById('registroForm');
         const submitButton = document.getElementById('submit-button');
         const successModal = document.getElementById('success-modal');
@@ -164,11 +169,18 @@
         const serieVehiculoHiddenInput = document.getElementById('serieVehiculo');
         const addVehicleButton = document.getElementById('addVehiculoButton');
         const selectedVehiclesContainer = document.getElementById('selectedVehiculosContainer');
+        const openSearchButton = document.getElementById('open-search');
 
         const MANUAL_OPTION_VALUE = '__manual__';
         const OTHER_MODEL_VALUE = '__other_model__';
 
         let selectedVehicles = [];
+
+        if (openSearchButton) {
+            openSearchButton.addEventListener('click', () => {
+                window.location.href = 'consulta-clientes.html';
+            });
+        }
 
         const VEHICLE_CATALOG = {
             bmwAutos: {
@@ -1106,31 +1118,52 @@
 
 
         const openSuccessModal = () => {
+            if (!successModal) {
+                alert('✅ Registro enviado correctamente');
+                return;
+            }
+
             successModal.classList.add('show');
             successModal.setAttribute('aria-hidden', 'false');
-            closeModalButton.focus();
+            closeModalButton?.focus();
         };
 
         const closeSuccessModal = () => {
+            if (!successModal) {
+                return;
+            }
+
             successModal.classList.remove('show');
             successModal.setAttribute('aria-hidden', 'true');
-            submitButton.focus();
+            submitButton?.focus();
         };
 
-        closeModalButton.addEventListener('click', closeSuccessModal);
-        successModal.addEventListener('click', event => {
-            if (event.target === successModal) {
-                closeSuccessModal();
-            }
-        });
+        if (closeModalButton) {
+            closeModalButton.addEventListener('click', closeSuccessModal);
+        }
+
+        if (successModal) {
+            successModal.addEventListener('click', event => {
+                if (event.target === successModal) {
+                    closeSuccessModal();
+                }
+            });
+        }
+
         document.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && successModal.classList.contains('show')) {
+            if (event.key === 'Escape' && successModal?.classList.contains('show')) {
                 closeSuccessModal();
             }
         });
 
         form.addEventListener('submit', e => {
             e.preventDefault();
+
+            if (!scriptURL) {
+                alert('No se ha configurado la URL del WebApp. Actualiza app-config.js.');
+                return;
+            }
+
             submitButton.disabled = true;
             submitButton.textContent = 'Enviando...';
 
@@ -1156,8 +1189,8 @@
                 openSuccessModal();
             })
             .catch(error => {
-                console.error('Error!', error.message);
-                alert('Error: No se pudo enviar el formulario. Verifique la conexión.');
+                console.error('Error al enviar el formulario', error);
+                alert('❌ Error al enviar el registro. Intenta nuevamente.');
             })
             .finally(() => {
                 submitButton.disabled = false;
