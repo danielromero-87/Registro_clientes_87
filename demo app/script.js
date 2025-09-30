@@ -25,6 +25,10 @@ const HEADERS = [
   'Observaciones'
 ];
 
+const VEHICLE_IMAGE_BASE_PATH = 'imagenes';
+const VEHICLE_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+let mediaRenderId = 0;
+
 
 
 const CLIENT_SECTIONS = [
@@ -71,6 +75,7 @@ const searchButton = document.getElementById('searchButton');
 const feedback = document.getElementById('feedback');
 const clientCard = document.getElementById('clientCard');
 const clientDetails = document.getElementById('clientDetails');
+const clientMedia = document.getElementById('clientMedia');
 const newSearchButton = document.getElementById('newSearchButton');
 
 if (form && telefonoInput && searchButton && feedback && clientCard && clientDetails) {
@@ -256,6 +261,10 @@ function renderClientDetails(record) {
   }
 
   clientDetails.innerHTML = '';
+  if (clientMedia) {
+    clientMedia.classList.add('hidden');
+    clientMedia.innerHTML = '';
+  }
 
   clientCard.classList.remove('is-visible');
   clientCard.classList.remove('hidden');
@@ -296,8 +305,217 @@ function renderClientDetails(record) {
     clientDetails.appendChild(sectionEl);
   });
 
+  const currentRenderId = ++mediaRenderId;
+  renderVehicleMedia(record, currentRenderId).catch(error => {
+    console.error('Error al cargar la imagen del vehículo', error);
+  });
+
   clientCard.classList.remove('hidden');
   requestAnimationFrame(() => clientCard.classList.add('is-visible'));
+}
+
+async function renderVehicleMedia(record, requestId) {
+  if (!clientMedia) {
+    return;
+  }
+
+  const labels = getVehicleImageLabels(record);
+  if (!labels.length) {
+    return;
+  }
+
+  const resolved = [];
+
+  for (const label of labels) {
+    const match = await findVehicleImage(label);
+    if (match) {
+      resolved.push(match);
+    }
+  }
+
+  if (!resolved.length || requestId !== mediaRenderId) {
+    return;
+  }
+
+  clientMedia.innerHTML = '';
+  if (requestId !== mediaRenderId) {
+    return;
+  }
+
+  const titleEl = document.createElement('h3');
+  titleEl.className = 'client-section__title';
+  titleEl.textContent = resolved.length > 1
+    ? '📷 Vehículos relacionados'
+    : '📷 Vehículo relacionado';
+  clientMedia.appendChild(titleEl);
+
+  const listEl = document.createElement('div');
+  listEl.className = 'client-media__list';
+
+  resolved.forEach(({ src, label }) => {
+    const itemEl = document.createElement('figure');
+    itemEl.className = 'client-media__item';
+
+    const imageEl = document.createElement('img');
+    imageEl.className = 'client-media__thumbnail';
+    imageEl.src = src;
+    imageEl.alt = `Foto de referencia del vehículo ${label}`;
+    imageEl.loading = 'lazy';
+    itemEl.appendChild(imageEl);
+
+    const captionEl = document.createElement('figcaption');
+    captionEl.className = 'client-media__caption';
+    captionEl.textContent = label;
+    itemEl.appendChild(captionEl);
+
+    listEl.appendChild(itemEl);
+  });
+
+  clientMedia.appendChild(listEl);
+  if (requestId === mediaRenderId) {
+    clientMedia.classList.remove('hidden');
+  }
+}
+
+function getVehicleImageLabels(record) {
+  const fields = [
+    'Serie del vehículo',
+    'Serie del vehículo 2',
+    'Serie del vehículo 3'
+  ];
+
+  const labels = new Set();
+
+  fields.forEach(key => {
+    const rawValue = record[key];
+    if (!rawValue) {
+      return;
+    }
+
+    String(rawValue)
+      .split(';')
+      .map(value => formatGenericValue(value))
+      .filter(Boolean)
+      .forEach(value => labels.add(value));
+  });
+
+  return Array.from(labels);
+}
+
+async function findVehicleImage(label) {
+  const baseNames = buildImageNameCandidates(label);
+
+  for (const baseName of baseNames) {
+    for (const extension of VEHICLE_IMAGE_EXTENSIONS) {
+      const src = `${VEHICLE_IMAGE_BASE_PATH}/${baseName}.${extension}`;
+      const exists = await preloadImage(src);
+      if (exists) {
+        return { src, label };
+      }
+    }
+  }
+
+  return null;
+}
+
+function buildImageNameCandidates(label) {
+  const rawValue = formatGenericValue(label);
+  if (!rawValue) {
+    return [];
+  }
+
+  const collapseSpaces = value => String(value || '').replace(/\s+/g, ' ').trim();
+  const stripDiacritics = value => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const sanitize = value => String(value || '')
+    .replace(/["'`´]/g, '')
+    .replace(/[\/:*?"<>|]/g, '-');
+  const toDash = value => String(value || '').replace(/\s+/g, '-');
+  const toUnderscore = value => String(value || '').replace(/\s+/g, '_');
+  const removeParens = value => String(value || '').replace(/[()]/g, ' ');
+  const toSlug = value => stripDiacritics(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  const trimmed = collapseSpaces(rawValue);
+  if (!trimmed) {
+    return [];
+  }
+
+  const parts = trimmed.split('|').map(part => collapseSpaces(part)).filter(Boolean);
+
+  const baseForms = new Set([
+    trimmed,
+    collapseSpaces(trimmed.replace(/\|/g, ' ')),
+    parts.join(' '),
+    parts.join('-'),
+    parts.join('_')
+  ]);
+
+  if (parts.length) {
+    baseForms.add(parts[parts.length - 1]);
+  }
+
+  if (parts.length > 1) {
+    const head = collapseSpaces(parts.slice(0, -1).join(' '));
+    const tail = parts[parts.length - 1];
+    if (head && tail) {
+      baseForms.add(`${head} ${tail}`);
+      baseForms.add(`${head}-${tail}`);
+    }
+  }
+
+  const candidates = new Set();
+  const pushCandidate = value => {
+    if (!value) {
+      return;
+    }
+    const cleaned = collapseSpaces(String(value)
+      .replace(/-+/g, '-')
+      .replace(/_+/g, '_'));
+    if (cleaned) {
+      candidates.add(cleaned);
+      candidates.add(cleaned.toLowerCase());
+    }
+  };
+
+  baseForms.forEach(base => {
+    const collapsed = collapseSpaces(base);
+    const ascii = stripDiacritics(collapsed);
+    const sanitized = sanitize(collapsed);
+    const sanitizedAscii = sanitize(ascii);
+    const withoutParens = collapseSpaces(removeParens(collapsed));
+    const withoutParensAscii = stripDiacritics(withoutParens);
+
+    [
+      collapsed,
+      ascii,
+      sanitized,
+      sanitizedAscii,
+      withoutParens,
+      withoutParensAscii,
+      toDash(sanitized),
+      toDash(sanitizedAscii),
+      toDash(withoutParens),
+      toDash(withoutParensAscii),
+      toUnderscore(sanitized),
+      toUnderscore(sanitizedAscii),
+      toSlug(collapsed)
+    ].forEach(pushCandidate);
+  });
+
+  return Array.from(candidates);
+}
+
+function preloadImage(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
 }
 
 
@@ -373,6 +591,10 @@ function hideClientCard() {
   const finalize = () => {
     clientCard.classList.add('hidden');
     clientDetails.innerHTML = '';
+    if (clientMedia) {
+      clientMedia.classList.add('hidden');
+      clientMedia.innerHTML = '';
+    }
   };
 
   if (clientCard.classList.contains('hidden')) {
