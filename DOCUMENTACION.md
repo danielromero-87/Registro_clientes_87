@@ -185,3 +185,95 @@ Esta sección resume cronológicamente las acciones realizadas para que la demo 
 - Se dejó documentada la existencia del backend Node.js como alternativa para entornos con políticas más restrictivas.
 - El botón "Buscar cliente" desde el formulario abre `consulta-clientes.html`, reutilizando la misma configuración.
 - `app-config.js` centraliza la URL del WebApp, evitando olvidos al publicar nuevas implementaciones.
+
+### 8.6 Integracion de imagenes de vehiculos (septiembre 2024)
+
+1. **Paquete de imagenes**
+   - Se importo la biblioteca completa de fotograficas de modelos BMW y MINI usadas en el selector del formulario. Todos los archivos residen en `imagenes/` y mantienen el formato `marca-serie-modelo-tipo.png` (minusculas, guiones y sin espacios).
+   - Se reintrodujo `imagenes/MEMBRETE_HEADER.png` para que el formulario de registro muestre nuevamente el membrete corporativo en el encabezado.
+
+2. **Heuristica de busqueda en la consulta**
+   - `demo app/script.js` ahora genera candidatos de nombre a partir de los valores de la columna "Serie del vehiculo" eliminando tildes, simbolos de separacion (`|`, `;`) y mayusculas antes de intentar cargar la miniatura.
+   - La busqueda prueba variaciones con guiones, guiones bajos y versiones ASCII, por lo que una entrada como `BMW | Serie i (electrico) | I3 - hatchback` termina revisando rutas tales como `imagenes/bmw-serie-i-(electricos)-i3-hatchback.png` y `imagenes/bmw-serie-i-electricos-i3-hatchback.png`.
+   - Si no existe un archivo coincidente no se muestra tarjeta de medios; tan pronto se agrega la imagen correcta (nombre limpio en minusculas) se renderiza de forma automatica al consultar el cliente.
+
+3. **Ajustes visuales**
+   - Se actualizo `.brand-banner` en `css/components.css` para que el membrete ocupe el 100% del ancho de la tarjeta (`display: block`, `width: 100%`, sin `max-width`). Esto asegura que `imagenes/MEMBRETE_HEADER.png` se vea de borde a borde.
+ - El area de medios (`clientMedia`) se limpia y oculta entre consultas para evitar que aparezcan imagenes residuales cuando se realiza una nueva busqueda.
+
+4. **Verificacion sugerida**
+  - Servir el proyecto con `python3 -m http.server 8000`, abrir `http://localhost:8000/consulta-clientes.html`, buscar un cliente real y confirmar la aparicion de las miniaturas cargadas desde `imagenes/`.
+  - Al agregar nuevos modelos al Google Sheet, replicar el nombre normalizado del valor en el archivo de imagen correspondiente. En caso de duda, convertir el texto a minusculas, reemplazar espacios por guiones y eliminar tildes.
+
+## 9. Catálogo BMW Motorrad (scraping)
+
+### 9.1 Objetivo y resumen
+
+Se creó el script `scripts/scrape_bmw_motorrad.py` para automatizar la extracción de referencias BMW Motorrad desde la “Guía de Valores” de Fasecolda. El script:
+
+- Lee el catálogo local definido en `Registro-clientes-87.html` (sección BMW Motorrad) respetando el orden de visualización.
+- Autentica contra el mismo API público que usa la web oficial, normaliza las referencias y descarga la primera imagen disponible por modelo.
+- Genera tres artefactos: la carpeta `imagenes_motos/`, `bmw_motorrad_referencias.csv` y `bmw_motorrad_referencias.json`.
+
+En la última corrida se obtuvieron 50 coincidencias (49 con imagen y 1 sin foto publicada). Además, el script lista 84 referencias del catálogo interno que Fasecolda no expone en su API para revisión manual.
+
+### 9.2 Requisitos
+
+- Python 3.8 o superior.
+- Biblioteca `requests` (`pip install requests` si no está disponible en el entorno).
+- Conexión a internet (el script descarga token, datos y fotografías).
+- Espacio en disco para ~50 imágenes JPEG (poco más de 6 MB en total).
+
+> **Nota sobre timeouts:** La CLI de Codex limita cada comando a ~10 s. Por ello el script permite ejecutar el scraping en lotes controlados con `--chunk-size` y `--chunk-index`.
+
+### 9.3 Ejecución recomendada
+
+1. Situarse en la raíz del proyecto (`/home/danielromero/Datos/registro_clientes_87`).
+2. Ejecutar el scraping por lotes (17 referencias por lote funciona bien):
+
+   ```bash
+   for idx in $(seq 0 7); do
+     python3 scripts/scrape_bmw_motorrad.py --chunk-size 17 --chunk-index $idx
+   done
+   ```
+
+   Ajustar `--chunk-size` y `--chunk-index` si se quiere reintentar únicamente un tramo concreto (por ejemplo, el lote que reportó fallas).
+
+3. Si solo se desean regenerar los CSV/JSON sin volver a bajar imágenes, añadir `--skip-download`:
+
+   ```bash
+   python3 scripts/scrape_bmw_motorrad.py --skip-download
+   ```
+
+### 9.4 Estructura de salida
+
+- `imagenes_motos/NNN_slug.jpg`: fotografía de la referencia `NNN`, donde NNN es el índice del catálogo con relleno de ceros (ej. `015_bmw-f-750-gs-premium-mt-850cc-abs.jpg`). El script sobreescribe el archivo si detecta una versión más reciente.
+- `bmw_motorrad_referencias.csv`: tabla con los campos `order`, `catalog_label`, `codigo`, `tipologia`, `image_filename`, `image_url`, `image_downloaded` y otros metadatos.
+- `bmw_motorrad_referencias.json`: mismo contenido en formato JSON para integraciones posteriores.
+
+La columna `image_downloaded` se marca como `False` cuando el API no expone fotografía. Actualmente solo ocurre con `BMW R [K51] 1250 GS ADVENTURE R MT 1250CC ABS`.
+
+### 9.5 Diagnóstico de coincidencias
+
+Al final de cada ejecución se imprimen dos listados importantes:
+
+- **Referencias sin coincidencia en el API:** catálogo interno que Fasecolda no publica. Útil para decidir si se sustituyen por imágenes propias o se ocultan del selector.
+- **Referencias sin imagen descargable:** coincidencias que existían en la API pero cuyo primer recurso falló. El script vuelve a marcarlas en cada corrida hasta que la descarga sea exitosa.
+
+Para revisar qué registros carecen de imagen basta con ejecutar:
+
+```bash
+python3 - <<'PY'
+import csv
+records = list(csv.DictReader(open('bmw_motorrad_referencias.csv', encoding='utf-8')))
+missing = [r['catalog_label'] for r in records if r['image_downloaded'] == 'False']
+print(missing or 'Todas las coincidencias tienen imagen')
+PY
+```
+
+### 9.6 Mantenimiento
+
+- **Cambios en credenciales del API:** Fasecolda publica las credenciales en su bundle JS. Si dejan de funcionar, actualizar `API_USERNAME` y `API_PASSWORD` en el script.
+- **Nuevos modelos en el catálogo local:** al añadir modelos a `Registro-clientes-87.html`, reejecutar el scraping para sincronizar fotos y metadatos.
+- **Respaldo:** conservar `imagenes_motos/` junto con los CSV/JSON en control de versiones o en un almacenamiento seguro para mantener trazabilidad.
+- **Registro de errores:** los warnings se muestran en consola (por ejemplo, cuando una descarga de imagen falla). Conviene guardarlos en el flujo de despliegue para saber qué modelo requiere intervención manual.

@@ -148,6 +148,52 @@ Implementación del sistema de diseño corporativo modular y alineación visual 
     *   Tarjetas contrastadas, feedback contextual (`feedback--success`, `feedback--error`) y navegación coherente hacia el registro.
     *   `demo app/script.js` ajusta los estados para reutilizar el mismo sistema de diseño.
 
+### v2.1
+
+#### Resumen
+Integración de la biblioteca de imágenes de vehículos y ajustes visuales del membrete corporativo.
+
+#### Detalles Técnicos
+
+1.  **Catálogo de imágenes (`imagenes/`):**
+    *   Se incorporó el paquete completo de fotografías de BMW/MINI utilizado por el selector del formulario.
+    *   Cada archivo sigue el patrón `marca-serie-modelo-tipo.png` en minúsculas, con guiones en lugar de espacios y sin tildes.
+    *   El membrete `MEMBRETE_HEADER.png` se restauró en la carpeta para que el formulario muestre el encabezado corporativo.
+2.  **Heurística de búsqueda (`demo app/script.js`):**
+    *   La función `buildImageNameCandidates` normaliza los valores de Sheets (quita pipes `|`, tildes y símbolos) y genera variaciones con guiones, guiones bajos y versiones ASCII.
+    *   `findVehicleImage` recorre esas variantes y detecta la primera miniatura disponible, habilitando la sección multimedia en la tarjeta del cliente.
+3.  **Estilos (`css/components.css`):**
+    *   `.brand-banner` ahora es un bloque al 100 % del ancho disponible (`display: block`, `width: 100%`, `max-width: none`).
+    *   El banner ocupa todo el encabezado de la tarjeta, mostrando `imagenes/MEMBRETE_HEADER.png` sin márgenes laterales.
+4.  **Recomendaciones operativas:**
+    *   Servir el proyecto con `python3 -m http.server 8000`, consultar un cliente existente y confirmar la visualización de las miniaturas.
+    *   Cuando se añadan nuevos modelos en Sheets, crear la imagen correspondiente normalizando el nombre (minúsculas, guiones, sin acentos) para que la heurística la resuelva automáticamente.
+
+#### Scraper BMW Motorrad (2025-09)
+
+Se añadió el script `scripts/scrape_bmw_motorrad.py` para sincronizar el catálogo BMW Motorrad con la “Guía de Valores” de Fasecolda.
+
+1. **Qué hace:**
+   - Lee el listado BMW Motorrad ya definido en `Registro-clientes-87.html` conservando el orden del formulario.
+   - Autentica contra el API público de Fasecolda (las credenciales están embedidas en su bundle) y busca coincidencias exactas.
+   - Descarga la primera imagen disponible de cada referencia y la guarda en `imagenes_motos/NNN_slug.jpg` (NNN = posición con 3 dígitos).
+   - Genera `bmw_motorrad_referencias.csv` y `bmw_motorrad_referencias.json` con código, categoría, tipología, URL original y bandera `image_downloaded`.
+
+2. **Cómo ejecutarlo:**
+   - Desde la raíz, correr por lotes para evitar el timeout de la CLI (ejemplo con lotes de 17):
+
+     ```bash
+     for idx in $(seq 0 7); do
+       python3 scripts/scrape_bmw_motorrad.py --chunk-size 17 --chunk-index $idx
+     done
+     ```
+
+   - Si solo necesitas regenerar los metadatos sin bajar fotografías, añade `--skip-download`.
+
+3. **Estado actual:** se obtuvieron 50 coincidencias (49 con imagen, 1 sin foto en el API). El script reporta también 84 referencias del catálogo interno que no se encuentran en la plataforma oficial para que se revisen manualmente.
+
+4. **Mantenimiento:** si Fasecolda cambia usuario/contraseña o la estructura del API, actualiza las constantes `API_USERNAME` y `API_PASSWORD` en el script antes de reejecutarlo.
+
 ## 5. Control de Versiones con Git
 
 Para gestionar el código y los cambios a lo largo del tiempo, se utilizó Git y GitHub. Los pasos principales para subir el proyecto fueron:
