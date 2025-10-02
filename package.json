@@ -1,0 +1,24 @@
+{
+  "name": "registro_clientes_87",
+  "version": "1.0.0",
+  "description": "Esta herramienta se desarrolla con el fin de poder llevar el control de los clientes que llegan a la vitrina. El objetivo principal es capturar todos los datos del formulario que se diligencia y almacenarlos en una base de datos de Google Sheets. Esta es la primera fase del desarrollo de la herramienta.",
+  "main": "app-config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielromero-87/Registro_clientes_87.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/danielromero-87/Registro_clientes_87/issues"
+  },
+  "homepage": "https://github.com/danielromero-87/Registro_clientes_87#readme",
+  "dependencies": {
+    "puppeteer": "^24.23.0"
+  }
+}
