@@ -277,3 +277,33 @@ PY
 - **Nuevos modelos en el catálogo local:** al añadir modelos a `Registro-clientes-87.html`, reejecutar el scraping para sincronizar fotos y metadatos.
 - **Respaldo:** conservar `imagenes_motos/` junto con los CSV/JSON en control de versiones o en un almacenamiento seguro para mantener trazabilidad.
 - **Registro de errores:** los warnings se muestran en consola (por ejemplo, cuando una descarga de imagen falla). Conviene guardarlos en el flujo de despliegue para saber qué modelo requiere intervención manual.
+
+### 9.7 Normalización y fallback (2025-10-01)
+
+**Objetivo:** garantizar que cada modelo y serie de BMW Motorrad cuente con un slug consistente y que la consulta muestre al menos una imagen representativa.
+
+1. **Renombrado de assets**
+   - Se eliminaron los prefijos numéricos (`NNN_`) y se normalizaron todos los archivos a minúsculas sin tildes ni caracteres especiales (`bmw-f-900-gs-mt-900cc-abs.jpg`).
+   - Se crearon archivos de serie (`bmw-motorrad-serie-*.jpg`). Si existe una foto real (>5 KB) se reutiliza; en caso contrario se coloca un marcador de 1×1 px listo para ser reemplazado.
+   - El script auxiliar generó `motos_missing.json` con los modelos que aún necesitan fotografía oficial.
+
+2. **Heurística en `demo app/script.js`**
+   - `findVehicleImage` intenta primero el slug de la serie y después las variantes del modelo, recorriendo `imagenes/` y `imagenes_motos/` en ese orden.
+   - Se añadieron utilidades comunes (`collapseSpaces`, `slugifyValue`, `extractSeriesSlug`, etc.) para que la normalización coincida con los valores de Sheets y con las rutas de los archivos.
+
+3. **Buenas prácticas**
+   - Reemplazar cuanto antes los marcadores de serie manteniendo el nombre del archivo (peso ~329 bytes identifica a los placeholders).
+   - Tras sustituir una imagen, refrescar `consulta-clientes.html` y confirmar que la tarjeta del cliente muestra la miniatura deseada.
+   - Si se reejecuta el scraper, respaldar previamente las imágenes curadas para restaurarlas en caso de que el proceso automatizado las sobrescriba.
+
+## 10. Problemas conocidos y soluciones
+
+### 10.1 Bloqueo `net::ERR_BLOCKED_BY_ORB` en Google Chrome
+
+- **Síntoma:** al consultar un cliente, la consola muestra `No se pudo cargar el recurso JSONP` y la petición `exec?...callback=clienteCallback...` aparece bloqueada.
+- **Causa:** Chrome impide que un `<script>` obtenga JSON (Optimized Response Blocking). El modo JSONP usado como fallback activaba el bloqueo.
+- **Solución aplicada:**
+  1. Configurar `serverApiUrl` en `app-config.js` apuntando a la URL `/exec` de Apps Script.
+  2. `fetchClienteRest` realiza la petición con `mode: 'cors'` (sin credenciales), por lo que Apps Script entrega la respuesta JSON con CORS y el navegador la acepta.
+  3. El modo JSONP permanece disponible únicamente si `serverApiUrl` se deja vacío (útil para pruebas desde `file://`).
+- **Verificación:** en DevTools → Network se observa la llamada `GET https://script.google.com/.../exec?telefono=...` con estado 200 y sin errores ORB.

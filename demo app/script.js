@@ -25,7 +25,7 @@ const HEADERS = [
   'Observaciones'
 ];
 
-const VEHICLE_IMAGE_BASE_PATH = 'imagenes';
+const VEHICLE_IMAGE_BASE_PATHS = ['imagenes', 'imagenes_motos'];
 const VEHICLE_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 let mediaRenderId = 0;
 
@@ -152,6 +152,8 @@ async function fetchClienteRest(telefono) {
 
   const response = await fetch(url, {
     method: 'GET',
+    mode: 'cors',
+    credentials: 'omit',
     headers: {
       Accept: 'application/json'
     }
@@ -404,13 +406,41 @@ function getVehicleImageLabels(record) {
 
 async function findVehicleImage(label) {
   const baseNames = buildImageNameCandidates(label);
+  const ordered = [];
+  const seen = new Set();
 
-  for (const baseName of baseNames) {
-    for (const extension of VEHICLE_IMAGE_EXTENSIONS) {
-      const src = `${VEHICLE_IMAGE_BASE_PATH}/${baseName}.${extension}`;
-      const exists = await preloadImage(src);
-      if (exists) {
-        return { src, label };
+  const pushOrdered = value => {
+    const normalized = formatGenericValue(value);
+    if (!normalized) {
+      return;
+    }
+    if (seen.has(normalized)) {
+      return;
+    }
+    ordered.push(normalized);
+    seen.add(normalized);
+  };
+
+  const seriesSlug = extractSeriesSlug(label);
+  if (seriesSlug) {
+    pushOrdered(seriesSlug);
+  }
+
+  const seriesAlias = extractSeriesAlias(label);
+  if (seriesAlias) {
+    pushOrdered(seriesAlias);
+  }
+
+  baseNames.forEach(pushOrdered);
+
+  for (const baseName of ordered) {
+    for (const basePath of VEHICLE_IMAGE_BASE_PATHS) {
+      for (const extension of VEHICLE_IMAGE_EXTENSIONS) {
+        const src = `${basePath}/${baseName}.${extension}`;
+        const exists = await preloadImage(src);
+        if (exists) {
+          return { src, label };
+        }
       }
     }
   }
@@ -424,50 +454,44 @@ function buildImageNameCandidates(label) {
     return [];
   }
 
-  const collapseSpaces = value => String(value || '').replace(/\s+/g, ' ').trim();
-  const stripDiacritics = value => String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-  const sanitize = value => String(value || '')
-    .replace(/["'`´]/g, '')
-    .replace(/[\/:*?"<>|]/g, '-');
-  const toDash = value => String(value || '').replace(/\s+/g, '-');
-  const toUnderscore = value => String(value || '').replace(/\s+/g, '_');
-  const removeParens = value => String(value || '').replace(/[()]/g, ' ');
-  const toSlug = value => stripDiacritics(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
   const trimmed = collapseSpaces(rawValue);
   if (!trimmed) {
     return [];
   }
 
-  const parts = trimmed.split('|').map(part => collapseSpaces(part)).filter(Boolean);
+  const parts = splitLabelParts(trimmed);
 
-  const baseForms = new Set([
-    trimmed,
-    collapseSpaces(trimmed.replace(/\|/g, ' ')),
-    parts.join(' '),
-    parts.join('-'),
-    parts.join('_')
-  ]);
+  const baseForms = [];
+  const baseSeen = new Set();
+  const pushBaseForm = value => {
+    const collapsed = collapseSpaces(value);
+    if (!collapsed || baseSeen.has(collapsed)) {
+      return;
+    }
+    baseForms.push(collapsed);
+    baseSeen.add(collapsed);
+  };
 
-  if (parts.length) {
-    baseForms.add(parts[parts.length - 1]);
-  }
+  pushBaseForm(trimmed);
+  pushBaseForm(trimmed.replace(/\|/g, ' '));
+  pushBaseForm(parts.join(' '));
+  pushBaseForm(parts.join('-'));
+  pushBaseForm(parts.join('_'));
+
+  parts.forEach(pushBaseForm);
 
   if (parts.length > 1) {
-    const head = collapseSpaces(parts.slice(0, -1).join(' '));
-    const tail = parts[parts.length - 1];
-    if (head && tail) {
-      baseForms.add(`${head} ${tail}`);
-      baseForms.add(`${head}-${tail}`);
+    const brand = parts[0];
+    for (let i = 1; i < parts.length; i++) {
+      const segment = parts[i];
+      if (brand && segment) {
+        pushBaseForm(`${brand} ${segment}`);
+      }
     }
   }
 
-  const candidates = new Set();
+  const candidates = [];
+  const candidateSeen = new Set();
   const pushCandidate = value => {
     if (!value) {
       return;
@@ -475,22 +499,27 @@ function buildImageNameCandidates(label) {
     const cleaned = collapseSpaces(String(value)
       .replace(/-+/g, '-')
       .replace(/_+/g, '_'));
-    if (cleaned) {
-      candidates.add(cleaned);
-      candidates.add(cleaned.toLowerCase());
+    if (!cleaned || candidateSeen.has(cleaned)) {
+      return;
+    }
+    candidates.push(cleaned);
+    candidateSeen.add(cleaned);
+    const lower = cleaned.toLowerCase();
+    if (!candidateSeen.has(lower)) {
+      candidates.push(lower);
+      candidateSeen.add(lower);
     }
   };
 
   baseForms.forEach(base => {
-    const collapsed = collapseSpaces(base);
-    const ascii = stripDiacritics(collapsed);
-    const sanitized = sanitize(collapsed);
-    const sanitizedAscii = sanitize(ascii);
-    const withoutParens = collapseSpaces(removeParens(collapsed));
+    const ascii = stripDiacritics(base);
+    const sanitized = sanitizeFilenameChunk(base);
+    const sanitizedAscii = sanitizeFilenameChunk(ascii);
+    const withoutParens = collapseSpaces(removeParentheses(base));
     const withoutParensAscii = stripDiacritics(withoutParens);
 
     [
-      collapsed,
+      base,
       ascii,
       sanitized,
       sanitizedAscii,
@@ -502,11 +531,82 @@ function buildImageNameCandidates(label) {
       toDash(withoutParensAscii),
       toUnderscore(sanitized),
       toUnderscore(sanitizedAscii),
-      toSlug(collapsed)
+      slugifyValue(base)
     ].forEach(pushCandidate);
   });
 
-  return Array.from(candidates);
+  return candidates;
+}
+
+function collapseSpaces(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function stripDiacritics(value) {
+  const stringValue = String(value || '');
+  if (typeof stringValue.normalize !== 'function') {
+    return stringValue;
+  }
+  return stringValue
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function sanitizeFilenameChunk(value) {
+  return String(value || '')
+    .replace(/["'`´]/g, '')
+    .replace(/[\/:*?"<>|]/g, '-');
+}
+
+function removeParentheses(value) {
+  return String(value || '').replace(/[()]/g, ' ');
+}
+
+function toDash(value) {
+  return collapseSpaces(value).replace(/\s+/g, '-');
+}
+
+function toUnderscore(value) {
+  return collapseSpaces(value).replace(/\s+/g, '_');
+}
+
+function slugifyValue(value) {
+  const ascii = stripDiacritics(value);
+  const collapsed = collapseSpaces(ascii);
+  if (!collapsed) {
+    return '';
+  }
+  return collapsed
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function splitLabelParts(value) {
+  if (!value) {
+    return [];
+  }
+  return String(value)
+    .split('|')
+    .map(part => collapseSpaces(part))
+    .filter(Boolean);
+}
+
+function extractSeriesSlug(label) {
+  const parts = splitLabelParts(label);
+  if (parts.length < 2) {
+    return '';
+  }
+  const composed = [parts[0], parts[1]].filter(Boolean).join(' ');
+  return slugifyValue(composed);
+}
+
+function extractSeriesAlias(label) {
+  const parts = splitLabelParts(label);
+  if (parts.length < 2) {
+    return '';
+  }
+  return slugifyValue(parts[1]);
 }
 
 function preloadImage(src) {

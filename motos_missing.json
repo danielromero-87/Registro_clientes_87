@@ -1,0 +1,346 @@
+[
+  {
+    "model": "BMW C 600 Sport AT 650CC",
+    "slug": "bmw-c-600-sport-at-650cc"
+  },
+  {
+    "model": "BMW C1 200 AT 200CC",
+    "slug": "bmw-c1-200-at-200cc"
+  },
+  {
+    "model": "BMW F 650 GS Dakar MT 650CC",
+    "slug": "bmw-f-650-gs-dakar-mt-650cc"
+  },
+  {
+    "model": "BMW F 650 GS MT 650CC",
+    "slug": "bmw-f-650-gs-mt-650cc"
+  },
+  {
+    "model": "BMW F 650 S/ST MT 650CC",
+    "slug": "bmw-f-650-s-st-mt-650cc"
+  },
+  {
+    "model": "BMW F 650 GS Twin MT 800CC",
+    "slug": "bmw-f-650-gs-twin-mt-800cc"
+  },
+  {
+    "model": "BMW F 800 S MT 800CC",
+    "slug": "bmw-f-800-s-mt-800cc"
+  },
+  {
+    "model": "BMW F 800 R MT 800CC",
+    "slug": "bmw-f-800-r-mt-800cc"
+  },
+  {
+    "model": "BMW F 800 GT MT 800CC",
+    "slug": "bmw-f-800-gt-mt-800cc"
+  },
+  {
+    "model": "BMW F 900 GS MT 900CC ABS",
+    "slug": "bmw-f-900-gs-mt-900cc-abs"
+  },
+  {
+    "model": "BMW F 900 GS Adventure Premium/HP MT 900CC ABS",
+    "slug": "bmw-f-900-gs-adventure-premium-hp-mt-900cc-abs"
+  },
+  {
+    "model": "BMW F 900 GS Comfort MT 900CC ABS",
+    "slug": "bmw-f-900-gs-comfort-mt-900cc-abs"
+  },
+  {
+    "model": "BMW G 450 X MT 450CC",
+    "slug": "bmw-g-450-x-mt-450cc"
+  },
+  {
+    "model": "BMW G 650 Xmoto MT 650CC",
+    "slug": "bmw-g-650-xmoto-mt-650cc"
+  },
+  {
+    "model": "BMW G 650 GS [180] MT 650CC",
+    "slug": "bmw-g-650-gs-180-mt-650cc"
+  },
+  {
+    "model": "BMW G 650 GS Sertao MT 650CC",
+    "slug": "bmw-g-650-gs-sertao-mt-650cc"
+  },
+  {
+    "model": "BMW G 650 GS [188] MT 650CC",
+    "slug": "bmw-g-650-gs-188-mt-650cc"
+  },
+  {
+    "model": "BMW HP2 Enduro MT 1200CC",
+    "slug": "bmw-hp2-enduro-mt-1200cc"
+  },
+  {
+    "model": "BMW HP4 Sport MT 1000CC",
+    "slug": "bmw-hp4-sport-mt-1000cc"
+  },
+  {
+    "model": "BMW K 75S MT 750CC",
+    "slug": "bmw-k-75s-mt-750cc"
+  },
+  {
+    "model": "BMW K 1200S MT 1200CC",
+    "slug": "bmw-k-1200s-mt-1200cc"
+  },
+  {
+    "model": "BMW K 1200LT MT 1200CC",
+    "slug": "bmw-k-1200lt-mt-1200cc"
+  },
+  {
+    "model": "BMW K 1300S MT 1300CC",
+    "slug": "bmw-k-1300s-mt-1300cc"
+  },
+  {
+    "model": "BMW K 1200R MT 1200CC",
+    "slug": "bmw-k-1200r-mt-1200cc"
+  },
+  {
+    "model": "BMW K 1300R MT 1300CC",
+    "slug": "bmw-k-1300r-mt-1300cc"
+  },
+  {
+    "model": "BMW K 1600GTL Exclusive MT 1600CC",
+    "slug": "bmw-k-1600gtl-exclusive-mt-1600cc"
+  },
+  {
+    "model": "BMW K 1600B MT 1600CC",
+    "slug": "bmw-k-1600b-mt-1600cc"
+  },
+  {
+    "model": "BMW R 1100 GS MT 1100CC",
+    "slug": "bmw-r-1100-gs-mt-1100cc"
+  },
+  {
+    "model": "BMW R 1150 GS MT 1150CC",
+    "slug": "bmw-r-1150-gs-mt-1150cc"
+  },
+  {
+    "model": "BMW R 1150 GS Adventure MT 1150CC",
+    "slug": "bmw-r-1150-gs-adventure-mt-1150cc"
+  },
+  {
+    "model": "BMW R [K25] 1200 GS MT 1200CC",
+    "slug": "bmw-r-k25-1200-gs-mt-1200cc"
+  },
+  {
+    "model": "BMW R [K25] 1200 GS Adventure MT 1200CC",
+    "slug": "bmw-r-k25-1200-gs-adventure-mt-1200cc"
+  },
+  {
+    "model": "BMW R [K51] 1250 GS Adventure R MT 1250CC ABS",
+    "slug": "bmw-r-k51-1250-gs-adventure-r-mt-1250cc-abs"
+  },
+  {
+    "model": "BMW R 850 R MT 850CC",
+    "slug": "bmw-r-850-r-mt-850cc"
+  },
+  {
+    "model": "BMW R 1150 R MT 1150CC",
+    "slug": "bmw-r-1150-r-mt-1150cc"
+  },
+  {
+    "model": "BMW R [K27] 1200 R MT 1200CC",
+    "slug": "bmw-r-k27-1200-r-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200 C MT 1200CC",
+    "slug": "bmw-r-1200-c-mt-1200cc"
+  },
+  {
+    "model": "BMW R [K33] nineT Urban G/S MT 1200CC ABS",
+    "slug": "bmw-r-k33-ninet-urban-g-s-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R 100/7T MT 980CC",
+    "slug": "bmw-r-100-7t-mt-980cc"
+  },
+  {
+    "model": "BMW R 18/Rocktane MT 1800CC ABS",
+    "slug": "bmw-r-18-rocktane-mt-1800cc-abs"
+  },
+  {
+    "model": "BMW R 12 MT 1200CC ABS",
+    "slug": "bmw-r-12-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R [KR1] 12 nineT Premium MT 1200CC ABS",
+    "slug": "bmw-r-kr1-12-ninet-premium-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R 18 Transcontinental MT 1800CC ABS",
+    "slug": "bmw-r-18-transcontinental-mt-1800cc-abs"
+  },
+  {
+    "model": "BMW R 18 Bagger MT 1800CC ABS",
+    "slug": "bmw-r-18-bagger-mt-1800cc-abs"
+  },
+  {
+    "model": "BMW R 1100GS MT 1100CC",
+    "slug": "bmw-r-1100gs-mt-1100cc"
+  },
+  {
+    "model": "BMW R 1150GS MT 1150CC",
+    "slug": "bmw-r-1150gs-mt-1150cc"
+  },
+  {
+    "model": "BMW R 1150GS Adventure MT 1150CC",
+    "slug": "bmw-r-1150gs-adventure-mt-1150cc"
+  },
+  {
+    "model": "BMW R 1200GS [K25] MT 1200CC",
+    "slug": "bmw-r-1200gs-k25-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200GS Adventure [K25] MT 1200CC",
+    "slug": "bmw-r-1200gs-adventure-k25-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200GS [K50] MT 1200CC",
+    "slug": "bmw-r-1200gs-k50-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200GS Adventure [K51] MT 1200CC",
+    "slug": "bmw-r-1200gs-adventure-k51-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1250GS [K50] MT 1250CC ABS",
+    "slug": "bmw-r-1250gs-k50-mt-1250cc-abs"
+  },
+  {
+    "model": "BMW R 1250GS Adventure P [K51] MT 1250CC ABS",
+    "slug": "bmw-r-1250gs-adventure-p-k51-mt-1250cc-abs"
+  },
+  {
+    "model": "BMW R 1250GS Adventure R [K51] MT 1250CC ABS",
+    "slug": "bmw-r-1250gs-adventure-r-k51-mt-1250cc-abs"
+  },
+  {
+    "model": "BMW R 1300GS Adventure Premium Red/Auto MT 1300CC ABS",
+    "slug": "bmw-r-1300gs-adventure-premium-red-auto-mt-1300cc-abs"
+  },
+  {
+    "model": "BMW R 1300GS Adventure Premium Trophy/Black-Karakoum MT 1300CC ABS",
+    "slug": "bmw-r-1300gs-adventure-premium-trophy-black-karakoum-mt-1300cc-abs"
+  },
+  {
+    "model": "BMW R 850R MT 850CC",
+    "slug": "bmw-r-850r-mt-850cc"
+  },
+  {
+    "model": "BMW R 1150R MT 1150CC",
+    "slug": "bmw-r-1150r-mt-1150cc"
+  },
+  {
+    "model": "BMW R 1200R [K27] MT 1200CC",
+    "slug": "bmw-r-1200r-k27-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200C MT 1200CC",
+    "slug": "bmw-r-1200c-mt-1200cc"
+  },
+  {
+    "model": "BMW R nineT [K21] MT 1200CC",
+    "slug": "bmw-r-ninet-k21-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200R [K53] MT 1200CC ABS",
+    "slug": "bmw-r-1200r-k53-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R nineT Scrambler [K23] MT 1200CC ABS",
+    "slug": "bmw-r-ninet-scrambler-k23-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R nineT Urban G/S [K33] MT 1200CC ABS",
+    "slug": "bmw-r-ninet-urban-g-s-k33-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R nineT Pure [K22] MT 1200CC ABS",
+    "slug": "bmw-r-ninet-pure-k22-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R 1250R [K53] MT 1250CC ABS",
+    "slug": "bmw-r-1250r-k53-mt-1250cc-abs"
+  },
+  {
+    "model": "BMW R 1250RT [K52] MT 1250CC ABS",
+    "slug": "bmw-r-1250rt-k52-mt-1250cc-abs"
+  },
+  {
+    "model": "BMW R nineT Urban G/S 40 años [K33] MT 1200CC ABS",
+    "slug": "bmw-r-ninet-urban-g-s-40-anos-k33-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R 1250RT [K52 FL] MT 1250CC ABS",
+    "slug": "bmw-r-1250rt-k52-fl-mt-1250cc-abs"
+  },
+  {
+    "model": "BMW R 12 nineT Premium [KR1] MT 1200CC ABS",
+    "slug": "bmw-r-12-ninet-premium-kr1-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW R 1100S MT 1100CC",
+    "slug": "bmw-r-1100s-mt-1100cc"
+  },
+  {
+    "model": "BMW R 1200ST MT 1200CC",
+    "slug": "bmw-r-1200st-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200RT MT 1200CC",
+    "slug": "bmw-r-1200rt-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200RT [K52] MT 1200CC",
+    "slug": "bmw-r-1200rt-k52-mt-1200cc"
+  },
+  {
+    "model": "BMW R 1200RS [K54] MT 1200CC ABS",
+    "slug": "bmw-r-1200rs-k54-mt-1200cc-abs"
+  },
+  {
+    "model": "BMW S 1000RR [K46] MT 1000CC",
+    "slug": "bmw-s-1000rr-k46-mt-1000cc"
+  },
+  {
+    "model": "BMW S 1000RR M [K67] MT 1000CC",
+    "slug": "bmw-s-1000rr-m-k67-mt-1000cc"
+  },
+  {
+    "model": "BMW S 1000RR MS Carbon [K67] MT 1000CC ABS",
+    "slug": "bmw-s-1000rr-ms-carbon-k67-mt-1000cc-abs"
+  },
+  {
+    "model": "BMW S 1000RR Dynamic [K67] MT 1000CC ABS",
+    "slug": "bmw-s-1000rr-dynamic-k67-mt-1000cc-abs"
+  },
+  {
+    "model": "BMW S 1000RR Dynamic HP MT 1000CC",
+    "slug": "bmw-s-1000rr-dynamic-hp-mt-1000cc"
+  },
+  {
+    "model": "BMW S 1000RR Motorsport HP MT 1000CC",
+    "slug": "bmw-s-1000rr-motorsport-hp-mt-1000cc"
+  },
+  {
+    "model": "BMW S 1000R Dynamic [FL] MT 1000CC ABS",
+    "slug": "bmw-s-1000r-dynamic-fl-mt-1000cc-abs"
+  },
+  {
+    "model": "BMW S 1000R MS HP [FL] MT 1000CC ABS",
+    "slug": "bmw-s-1000r-ms-hp-fl-mt-1000cc-abs"
+  },
+  {
+    "model": "BMW S 1000R [K47] MT 1000CC",
+    "slug": "bmw-s-1000r-k47-mt-1000cc"
+  },
+  {
+    "model": "BMW S 1000R [K47 FL] MT 1000CC",
+    "slug": "bmw-s-1000r-k47-fl-mt-1000cc"
+  },
+  {
+    "model": "BMW S 1000R M [K63] MT 1000CC",
+    "slug": "bmw-s-1000r-m-k63-mt-1000cc"
+  }
+]

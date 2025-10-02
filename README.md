@@ -194,6 +194,32 @@ Se añadió el script `scripts/scrape_bmw_motorrad.py` para sincronizar el catá
 
 4. **Mantenimiento:** si Fasecolda cambia usuario/contraseña o la estructura del API, actualiza las constantes `API_USERNAME` y `API_PASSWORD` en el script antes de reejecutarlo.
 
+### v2.2
+
+#### Resumen
+Normalización del catálogo BMW Motorrad, fallback visual por serie y solución al bloqueo `net::ERR_BLOCKED_BY_ORB` en Google Chrome durante las consultas.
+
+#### Detalles Técnicos
+
+1. **Renombrado de imágenes (`imagenes_motos/`):**
+   * Se eliminó el prefijo numérico y se homogenizó el slug de cada modelo (`bmw-k-1300s-mt-1300cc.jpg`).
+   * Se añadieron miniaturas de serie (`bmw-motorrad-serie-k.jpg`, `bmw-motorrad-serie-r.jpg`, etc.) reutilizando fotos existentes o creando marcadores ligeros (1×1 px) cuando falta material gráfico.
+   * Se generó `motos_missing.json` para listar los modelos sin imagen real y facilitar su priorización.
+
+2. **Heurística de búsqueda (`demo app/script.js`):**
+   * El buscador revisa tanto `imagenes/` como `imagenes_motos/`, intentando primero el slug de la serie y luego las variantes del modelo.
+   * Se centralizaron utilidades de normalización (`collapseSpaces`, `slugifyValue`, `extractSeriesSlug`, etc.) para garantizar que el nombre del archivo coincida con la cadena almacenada en Sheets.
+
+3. **Compatibilidad con Chrome:**
+   * `app-config.js` apunta `serverApiUrl` al WebApp de Apps Script y `fetchClienteRest` usa `fetch` con `mode: 'cors'`, evitando que el navegador bloquee la respuesta con `ERR_BLOCKED_BY_ORB`.
+   * El modo JSONP permanece como respaldo: basta con vaciar `serverApiUrl` si se prueba desde `file://` o entornos sin CORS.
+
+#### Recomendaciones Operativas
+
+* Sustituir cada marcador de serie por la fotografía oficial correspondiente apenas esté disponible (manteniendo el mismo nombre de archivo).
+* Tras actualizar imágenes, servir `consulta-clientes.html` y verificar que la tarjeta muestra la miniatura esperada tanto para autos como para motos.
+* Después de redeployar Apps Script, comprobar en DevTools → Network que `GET https://script.google.com/.../exec?telefono=...` responde 200 sin errores ORB antes de liberar la actualización al equipo.
+
 ## 5. Control de Versiones con Git
 
 Para gestionar el código y los cambios a lo largo del tiempo, se utilizó Git y GitHub. Los pasos principales para subir el proyecto fueron:
