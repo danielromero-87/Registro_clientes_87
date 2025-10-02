@@ -247,7 +247,7 @@ En la última corrida se obtuvieron 50 coincidencias (49 con imagen y 1 sin foto
 
 ### 9.4 Estructura de salida
 
-- `imagenes_motos/NNN_slug.jpg`: fotografía de la referencia `NNN`, donde NNN es el índice del catálogo con relleno de ceros (ej. `015_bmw-f-750-gs-premium-mt-850cc-abs.jpg`). El script sobreescribe el archivo si detecta una versión más reciente.
+- `imagenes_motos/slug.ext`: fotografía de la referencia con nombre normalizado (sin prefijos numéricos) y con la extensión real detectada (`.jpg`, `.png`, `.webp`). El script sobreescribe el archivo si detecta una versión más reciente.
 - `bmw_motorrad_referencias.csv`: tabla con los campos `order`, `catalog_label`, `codigo`, `tipologia`, `image_filename`, `image_url`, `image_downloaded` y otros metadatos.
 - `bmw_motorrad_referencias.json`: mismo contenido en formato JSON para integraciones posteriores.
 
@@ -277,13 +277,14 @@ PY
 - **Nuevos modelos en el catálogo local:** al añadir modelos a `Registro-clientes-87.html`, reejecutar el scraping para sincronizar fotos y metadatos.
 - **Respaldo:** conservar `imagenes_motos/` junto con los CSV/JSON en control de versiones o en un almacenamiento seguro para mantener trazabilidad.
 - **Registro de errores:** los warnings se muestran en consola (por ejemplo, cuando una descarga de imagen falla). Conviene guardarlos en el flujo de despliegue para saber qué modelo requiere intervención manual.
+- **Normalización de activos existentes:** ejecutar `python3 scripts/normalize_moto_assets.py` cuando haya cambios manuales en las imágenes para alinear nombres de archivo, extensiones y metadatos antes de versionar.
 
 ### 9.7 Normalización y fallback (2025-10-01)
 
 **Objetivo:** garantizar que cada modelo y serie de BMW Motorrad cuente con un slug consistente y que la consulta muestre al menos una imagen representativa.
 
 1. **Renombrado de assets**
-   - Se eliminaron los prefijos numéricos (`NNN_`) y se normalizaron todos los archivos a minúsculas sin tildes ni caracteres especiales (`bmw-f-900-gs-mt-900cc-abs.jpg`).
+   - Se eliminaron los prefijos numéricos (`NNN_`), se normalizaron los slugs y se detectó automáticamente la extensión correcta de cada archivo (`bmw-f-900-gs-mt-900cc-abs.jpg`, `bmw-f-900-xr-dynamic-mt-900cc-abs.png`).
    - Se crearon archivos de serie (`bmw-motorrad-serie-*.jpg`). Si existe una foto real (>5 KB) se reutiliza; en caso contrario se coloca un marcador de 1×1 px listo para ser reemplazado.
    - El script auxiliar generó `motos_missing.json` con los modelos que aún necesitan fotografía oficial.
 
@@ -303,7 +304,7 @@ PY
 - **Síntoma:** al consultar un cliente, la consola muestra `No se pudo cargar el recurso JSONP` y la petición `exec?...callback=clienteCallback...` aparece bloqueada.
 - **Causa:** Chrome impide que un `<script>` obtenga JSON (Optimized Response Blocking). El modo JSONP usado como fallback activaba el bloqueo.
 - **Solución aplicada:**
-  1. Configurar `serverApiUrl` en `app-config.js` apuntando a la URL `/exec` de Apps Script.
-  2. `fetchClienteRest` realiza la petición con `mode: 'cors'` (sin credenciales), por lo que Apps Script entrega la respuesta JSON con CORS y el navegador la acepta.
-  3. El modo JSONP permanece disponible únicamente si `serverApiUrl` se deja vacío (útil para pruebas desde `file://`).
-- **Verificación:** en DevTools → Network se observa la llamada `GET https://script.google.com/.../exec?telefono=...` con estado 200 y sin errores ORB.
+  1. La consulta detecta automáticamente hosts de Google Apps Script o fallos de CORS y activa el fallback JSONP sin requerir cambios manuales en `app-config.js`.
+  2. `buildServerApiUrl` usa la ubicación actual como base incluso bajo `file://`, evitando excepciones al abrir el HTML directamente en Chrome.
+  3. Si `serverApiUrl` apunta a un backend con CORS habilitado, la ruta REST sigue siendo prioritaria; en caso contrario la experiencia permanece en modo JSONP.
+- **Verificación:** en DevTools → Network puede aparecer un intento REST bloqueado, pero la solicitud `<script ... callback=clienteCallback>` concluye en 200 y la tarjeta del cliente se renderiza sin errores `ORB`.

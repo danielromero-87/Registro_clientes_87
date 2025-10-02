@@ -29,6 +29,15 @@ const VEHICLE_IMAGE_BASE_PATHS = ['imagenes', 'imagenes_motos'];
 const VEHICLE_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 let mediaRenderId = 0;
 
+const serverApiDetails = tryParseUrl(SERVER_API_URL);
+const webAppDetails = tryParseUrl(WEBAPP_URL);
+const serverApiIsAppsScript = Boolean(serverApiDetails && isGoogleAppsScriptHost(serverApiDetails.hostname));
+const serverAndWebAppAreSame = Boolean(
+  serverApiDetails && webAppDetails && serverApiDetails.href === webAppDetails.href
+);
+const canUseServerApi = Boolean(SERVER_API_URL) && !serverApiIsAppsScript && !serverAndWebAppAreSame;
+const hasJsonpEndpoint = Boolean(WEBAPP_URL);
+
 
 
 const CLIENT_SECTIONS = [
@@ -68,7 +77,6 @@ const CLIENT_SECTIONS = [
 ];
 
 
-const hasServerApi = Boolean(SERVER_API_URL);
 const form = document.getElementById('searchForm');
 const telefonoInput = document.getElementById('telefono');
 const searchButton = document.getElementById('searchButton');
@@ -99,7 +107,7 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
       return;
     }
 
-    if (!hasServerApi && !WEBAPP_URL) {
+    if (!canUseServerApi && !hasJsonpEndpoint) {
       showFeedback('❌ Configura APP_CONFIG.webAppUrl o APP_CONFIG.serverApiUrl antes de buscar.', 'error');
       return;
     }
@@ -127,10 +135,27 @@ function normalizeTelefono(value) {
 async function fetchCliente(telefono) {
   setLoading(true);
   hideClientCard();
+  let restError;
+  let record;
   try {
-    const record = hasServerApi
-      ? await fetchClienteRest(telefono)
-      : await fetchClienteJsonp(telefono);
+    if (canUseServerApi) {
+      try {
+        record = await fetchClienteRest(telefono);
+      } catch (error) {
+        restError = error;
+        if (!shouldFallbackToJsonp(error)) {
+          throw error;
+        }
+        console.warn('Fallo la consulta REST; se intentará con JSONP.', error);
+      }
+    }
+
+    if (!record) {
+      if (!hasJsonpEndpoint) {
+        throw restError || new Error('No se pudo conectar con el endpoint configurado.');
+      }
+      record = await fetchClienteJsonp(telefono);
+    }
 
     renderClientDetails(record);
     showFeedback('✅ Cliente encontrado exitosamente', 'success');
@@ -175,7 +200,8 @@ function buildServerApiUrl(telefono) {
   }
 
   try {
-    const url = new URL(SERVER_API_URL, window.location.origin);
+    const base = resolveBaseUrl();
+    const url = new URL(SERVER_API_URL, base);
     url.searchParams.set('telefono', telefono);
     return url.toString();
   } catch (_error) {
@@ -189,6 +215,57 @@ async function safeParseJson(response) {
   } catch (_error) {
     return undefined;
   }
+}
+
+function shouldFallbackToJsonp(error) {
+  if (!hasJsonpEndpoint) {
+    return false;
+  }
+  if (!error) {
+    return false;
+  }
+  if (typeof error.code === 'number' && error.code === 18) {
+    return true;
+  }
+  const name = typeof error.name === 'string' ? error.name : '';
+  if (name === 'TypeError') {
+    return true;
+  }
+  const message = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+  return (
+    message.includes('failed to fetch') ||
+    message.includes('cors') ||
+    message.includes('network')
+  );
+}
+
+function resolveBaseUrl() {
+  const { origin, href } = window.location;
+  if (origin && origin !== 'null') {
+    return origin;
+  }
+  if (href && href.startsWith('file://')) {
+    return href;
+  }
+  return href || 'http://localhost';
+}
+
+function tryParseUrl(value) {
+  if (!value) {
+    return null;
+  }
+  try {
+    return new URL(value, resolveBaseUrl());
+  } catch (_error) {
+    return null;
+  }
+}
+
+function isGoogleAppsScriptHost(hostname) {
+  if (!hostname) {
+    return false;
+  }
+  return /(?:^|\.)script\.google(?:usercontent)?\.com$/i.test(hostname);
 }
 
 function fetchClienteJsonp(telefono) {

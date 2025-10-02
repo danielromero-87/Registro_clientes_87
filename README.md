@@ -176,7 +176,7 @@ Se añadió el script `scripts/scrape_bmw_motorrad.py` para sincronizar el catá
 1. **Qué hace:**
    - Lee el listado BMW Motorrad ya definido en `Registro-clientes-87.html` conservando el orden del formulario.
    - Autentica contra el API público de Fasecolda (las credenciales están embedidas en su bundle) y busca coincidencias exactas.
-   - Descarga la primera imagen disponible de cada referencia y la guarda en `imagenes_motos/NNN_slug.jpg` (NNN = posición con 3 dígitos).
+   - Descarga la primera imagen disponible de cada referencia y la guarda en `imagenes_motos/slug.ext`, eliminando prefijos numéricos y respetando la extensión real (`jpg`, `png`, `webp`).
    - Genera `bmw_motorrad_referencias.csv` y `bmw_motorrad_referencias.json` con código, categoría, tipología, URL original y bandera `image_downloaded`.
 
 2. **Cómo ejecutarlo:**
@@ -193,6 +193,7 @@ Se añadió el script `scripts/scrape_bmw_motorrad.py` para sincronizar el catá
 3. **Estado actual:** se obtuvieron 50 coincidencias (49 con imagen, 1 sin foto en el API). El script reporta también 84 referencias del catálogo interno que no se encuentran en la plataforma oficial para que se revisen manualmente.
 
 4. **Mantenimiento:** si Fasecolda cambia usuario/contraseña o la estructura del API, actualiza las constantes `API_USERNAME` y `API_PASSWORD` en el script antes de reejecutarlo.
+   - Ante desajustes entre nombres de archivo y metadatos, corre `python3 scripts/normalize_moto_assets.py` para alinear las extensiones y rutas antes de publicar cambios.
 
 ### v2.2
 
@@ -211,8 +212,8 @@ Normalización del catálogo BMW Motorrad, fallback visual por serie y solución
    * Se centralizaron utilidades de normalización (`collapseSpaces`, `slugifyValue`, `extractSeriesSlug`, etc.) para garantizar que el nombre del archivo coincida con la cadena almacenada en Sheets.
 
 3. **Compatibilidad con Chrome:**
-   * `app-config.js` apunta `serverApiUrl` al WebApp de Apps Script y `fetchClienteRest` usa `fetch` con `mode: 'cors'`, evitando que el navegador bloquee la respuesta con `ERR_BLOCKED_BY_ORB`.
-   * El modo JSONP permanece como respaldo: basta con vaciar `serverApiUrl` si se prueba desde `file://` o entornos sin CORS.
+   * La búsqueda detecta automáticamente endpoints de Google Apps Script o errores de CORS y activa JSONP como fallback, evitando `net::ERR_BLOCKED_BY_ORB` sin tocar la configuración.
+   * `buildServerApiUrl` ahora calcula la URL base también bajo `file://`, por lo que la consulta funciona en Chrome aun cuando se abre directamente desde el sistema de archivos.
 
 #### Recomendaciones Operativas
 

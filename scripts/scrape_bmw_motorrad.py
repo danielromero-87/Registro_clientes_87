@@ -22,6 +22,7 @@ import argparse
 import csv
 import json
 import re
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,6 +36,8 @@ HTML_CATALOG = ROOT_DIR / "Registro-clientes-87.html"
 IMAGES_DIR = ROOT_DIR / "imagenes_motos"
 CSV_OUTPUT = ROOT_DIR / "bmw_motorrad_referencias.csv"
 JSON_OUTPUT = ROOT_DIR / "bmw_motorrad_referencias.json"
+
+ASSET_ALLOWED_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
 
 # API endpoints and configuration
 TOKEN_URL = "https://guiadevalores.fasecolda.com/apifasecolda/token"
@@ -175,12 +178,13 @@ def read_catalog_models(html_path: Path) -> List[CatalogEntry]:
 
 
 def slugify(value: str, max_len: int = 80) -> str:
-    value = value.lower()
-    value = re.sub(r"[^a-z0-9]+", "-", value)
-    value = value.strip("-")
-    if max_len and len(value) > max_len:
-        value = value[:max_len].rstrip("-")
-    return value or "reference"
+    normalized = unicodedata.normalize("NFD", value)
+    ascii_value = "".join(char for char in normalized if unicodedata.category(char) != "Mn")
+    ascii_value = ascii_value.lower()
+    ascii_value = re.sub(r"[^a-z0-9]+", "-", ascii_value).strip("-")
+    if max_len and len(ascii_value) > max_len:
+        ascii_value = ascii_value[:max_len].rstrip("-")
+    return ascii_value or "reference"
 
 
 def normalize_label(value: str) -> str:
@@ -237,6 +241,43 @@ def download_image(session: requests.Session, filename: str, target_path: Path) 
     response = session.get(url, timeout=60)
     response.raise_for_status()
     target_path.write_bytes(response.content)
+
+
+def determine_extension(filename: str) -> str:
+    suffix = Path(filename).suffix.lower()
+    if not suffix:
+        return ".jpg"
+    if suffix == ".jpeg":
+        return ".jpg"
+    if suffix in ASSET_ALLOWED_EXTENSIONS:
+        return suffix
+    return ".jpg"
+
+
+def find_existing_asset(slug: str, order: int | None = None) -> Path | None:
+    if not slug:
+        return None
+    search_extensions = (".jpg", ".png", ".webp", ".jpeg")
+    for extension in search_extensions:
+        candidate = IMAGES_DIR / f"{slug}{extension}"
+        if candidate.exists():
+            return candidate
+    if order is not None:
+        prefix = f"{order:03d}_"
+        for extension in search_extensions:
+            legacy_candidate = IMAGES_DIR / f"{prefix}{slug}{extension}"
+            if legacy_candidate.exists():
+                return legacy_candidate
+    return None
+
+
+def as_relative_path(path: Path | None) -> Path | None:
+    if path is None:
+        return None
+    try:
+        return path.relative_to(ROOT_DIR)
+    except ValueError:
+        return path
 
 
 def write_outputs(records: Sequence[dict]) -> None:
@@ -316,9 +357,15 @@ def main() -> None:
             foto_nombre = api_entry.foto_nombre
             slug = slugify(entry.label)
             photo_path = None
+            relative_photo_path = None
             if foto_nombre:
-                photo_filename = f"{entry.order:03d}_{slug}.jpg"
-                photo_path = IMAGES_DIR / photo_filename
+                existing_asset = find_existing_asset(slug, entry.order)
+                if existing_asset:
+                    photo_path = existing_asset
+                else:
+                    extension = determine_extension(foto_nombre)
+                    photo_path = IMAGES_DIR / f"{slug}{extension}"
+                relative_photo_path = as_relative_path(photo_path)
                 already_downloaded = photo_path.exists()
                 image_url = f"{PHOTO_BASE_URL}{foto_nombre}"
                 should_download = (
@@ -337,7 +384,7 @@ def main() -> None:
             record = api_entry.to_record(
                 entry.order,
                 slug,
-                photo_path,
+                relative_photo_path,
                 downloaded=photo_path.exists() if photo_path else False,
                 image_url=image_url,
             )
