@@ -15,8 +15,9 @@ The script performs the following workflow:
 
 Notes
 -----
-* The credentials used here are hard-coded on fasecolda.com and therefore
-  public. They may change without notice, so handle failures gracefully.
+* Proporciona las credenciales del API mediante variables de entorno o
+  argumentos CLI. Fasecolda expone credenciales en su bundle público y puede
+  rotarlas sin aviso, así que maneja autentificación fallida con gracia.
 * Monetary values are returned by the API in millions of COP (as per the public
   site). The script keeps the numeric values exactly as delivered in the API.
 """
@@ -27,6 +28,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import sys
 import time
 from dataclasses import dataclass
@@ -45,8 +47,8 @@ BUSQUEDA_URL = "https://fasecoldaback.quantil.co/api/busqueda/{term}"
 TOKEN_URL = "https://guiadevalores.fasecolda.com/apifasecolda/token"
 DETAIL_URL = "https://guiadevalores.fasecolda.com/apifasecolda/api/listacodigosid/consultabycodigo/{codes}"
 
-API_USERNAME = "cristian.vasquez@quantil.com.co"
-API_PASSWORD = "eBGT6$tYU"
+ENV_API_USERNAME = "FASECOLDA_API_USERNAME"
+ENV_API_PASSWORD = "FASECOLDA_API_PASSWORD"
 
 YEARS_RANGE_DEFAULT = "2010-2026"
 MAX_CODES_PER_REQUEST = 20  # conservative chunk size used by the public webapp
@@ -94,6 +96,20 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_CSV_OUTPUT,
         help="Ruta del archivo CSV de salida",
     )
+    parser.add_argument(
+        "--api-username",
+        help=(
+            "Usuario del API de Fasecolda. Si se omite, se usa la variable de entorno "
+            f"{ENV_API_USERNAME}."
+        ),
+    )
+    parser.add_argument(
+        "--api-password",
+        help=(
+            "Contraseña del API de Fasecolda. Si se omite, se usa la variable de entorno "
+            f"{ENV_API_PASSWORD}."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -124,11 +140,11 @@ def fetch_codes(session: requests.Session, term: str) -> List[str]:
     return unique_codes
 
 
-def get_api_token(session: requests.Session) -> str:
+def get_api_token(session: requests.Session, username: str, password: str) -> str:
     payload = {
         "grant_type": "password",
-        "username": API_USERNAME,
-        "password": API_PASSWORD,
+        "username": username,
+        "password": password,
     }
     response = session.post(TOKEN_URL, data=payload, timeout=30)
     response.raise_for_status()
@@ -333,10 +349,18 @@ def main() -> None:
     chunk_size = args.chunk_size or MAX_CODES_PER_REQUEST
     chunk_size = min(max(chunk_size, 1), MAX_CODES_PER_REQUEST)
 
+    api_username = args.api_username or os.environ.get(ENV_API_USERNAME)
+    api_password = args.api_password or os.environ.get(ENV_API_PASSWORD)
+    if not api_username or not api_password:
+        raise SystemExit(
+            "Credenciales del API faltantes. Define --api-username/--api-password o "
+            f"las variables de entorno {ENV_API_USERNAME}/{ENV_API_PASSWORD}."
+        )
+
     with requests.Session() as session:
         codes = fetch_codes(session, args.term)
         print(f"Códigos encontrados para '{args.term}': {len(codes)}")
-        token = get_api_token(session)
+        token = get_api_token(session, api_username, api_password)
         records = collect_reference_records(session, codes, token, years, chunk_size)
     print(f"Registros descargados: {len(records)}")
 

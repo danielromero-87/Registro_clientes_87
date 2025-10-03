@@ -192,7 +192,35 @@ Se añadió el script `scripts/scrape_bmw_motorrad.py` para sincronizar el catá
 
 3. **Estado actual:** se obtuvieron 50 coincidencias (49 con imagen, 1 sin foto en el API). El script reporta también 84 referencias del catálogo interno que no se encuentran en la plataforma oficial para que se revisen manualmente.
 
-4. **Mantenimiento:** si Fasecolda cambia usuario/contraseña o la estructura del API, actualiza las constantes `API_USERNAME` y `API_PASSWORD` en el script antes de reejecutarlo.
+4. **Mantenimiento:** define las credenciales mediante las variables de entorno
+   `FASECOLDA_API_USERNAME` y `FASECOLDA_API_PASSWORD` (o pásalas con
+   `--api-username/--api-password` al ejecutar los scripts). Si Fasecolda rota
+   el usuario o contraseña, actualiza esos valores antes de reejecutar. Puedes
+   crear un archivo `.env` basado en `.env.example` (no se versiona) y cargarlo
+   con `export $(grep -v '^#' .env | xargs)` antes de ejecutar los scripts.
+
+### Limpieza de secretos publicados
+
+1. **Revoca** cualquier token o credencial expuesta en el panel del proveedor.
+2. **Reescribe** el historial para borrar la cadena comprometida. Ejemplo con
+   `git-filter-repo`:
+
+   ```bash
+   pip install git-filter-repo
+   printf "cristian.vasquez@quantil.com.co==>REDACTED\neBGT6$tYU==>REDACTED\n" > cleanup.txt
+   git filter-repo --replace-text cleanup.txt
+   ```
+
+   Agrega todas las cadenas sensibles que debes purgar al archivo
+   `cleanup.txt`.
+3. **Fuerza el push** para actualizar el remoto tras limpiar la historia:
+
+   ```bash
+   git push origin main --force-with-lease
+   ```
+
+4. **Genera nuevas credenciales** y actualiza tu `.env` local antes de volver a
+   ejecutar los scripts.
    - Ante desajustes entre nombres de archivo y metadatos, corre `python3 scripts/normalize_moto_assets.py` para alinear las extensiones y rutas antes de publicar cambios.
 
 ### v2.2

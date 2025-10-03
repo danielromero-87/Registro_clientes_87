@@ -273,7 +273,7 @@ PY
 
 ### 9.6 Mantenimiento
 
-- **Cambios en credenciales del API:** Fasecolda publica las credenciales en su bundle JS. Si dejan de funcionar, actualizar `API_USERNAME` y `API_PASSWORD` en el script.
+- **Cambios en credenciales del API:** Fasecolda publica las credenciales en su bundle JS. Si dejan de funcionar, actualiza `FASECOLDA_API_USERNAME` y `FASECOLDA_API_PASSWORD` (o pasa nuevos valores mediante `--api-username/--api-password` al ejecutar los scripts).
 - **Nuevos modelos en el catálogo local:** al añadir modelos a `Registro-clientes-87.html`, reejecutar el scraping para sincronizar fotos y metadatos.
 - **Respaldo:** conservar `imagenes_motos/` junto con los CSV/JSON en control de versiones o en un almacenamiento seguro para mantener trazabilidad.
 - **Registro de errores:** los warnings se muestran en consola (por ejemplo, cuando una descarga de imagen falla). Conviene guardarlos en el flujo de despliegue para saber qué modelo requiere intervención manual.

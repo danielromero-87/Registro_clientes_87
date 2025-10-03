@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import re
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -45,9 +46,8 @@ API_BASE_URL = "https://guiadevalores.fasecolda.com/apifasecolda/api"
 PHOTO_BASE_URL = "https://guiadevalores.fasecolda.com/ConsultaFotos/"
 TIPOLOGIA_IDS = list(range(16, 24))  # Tipologías asociadas a la categoría Motos
 
-# Credentials are exposed in the public bundle served by fasecolda.com.
-API_USERNAME = "cristian.vasquez@quantil.com.co"
-API_PASSWORD = "eBGT6$tYU"
+ENV_API_USERNAME = "FASECOLDA_API_USERNAME"
+ENV_API_PASSWORD = "FASECOLDA_API_PASSWORD"
 
 
 @dataclass
@@ -191,11 +191,11 @@ def normalize_label(value: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", value.upper())
 
 
-def get_api_token(session: requests.Session) -> str:
+def get_api_token(session: requests.Session, username: str, password: str) -> str:
     payload = {
         "grant_type": "password",
-        "username": API_USERNAME,
-        "password": API_PASSWORD,
+        "username": username,
+        "password": password,
     }
     response = session.post(TOKEN_URL, data=payload, timeout=30)
     response.raise_for_status()
@@ -313,6 +313,20 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Genera los archivos de metadatos sin descargar imágenes.",
     )
+    parser.add_argument(
+        "--api-username",
+        help=(
+            "Usuario del API de Fasecolda. Si se omite, se usa la variable de entorno "
+            f"{ENV_API_USERNAME}."
+        ),
+    )
+    parser.add_argument(
+        "--api-password",
+        help=(
+            "Contraseña del API de Fasecolda. Si se omite, se usa la variable de entorno "
+            f"{ENV_API_PASSWORD}."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -322,6 +336,14 @@ def main() -> None:
         raise SystemExit("--chunk-size debe ser un entero positivo")
     if args.chunk_index < 0:
         raise SystemExit("--chunk-index no puede ser negativo")
+
+    api_username = args.api_username or os.environ.get(ENV_API_USERNAME)
+    api_password = args.api_password or os.environ.get(ENV_API_PASSWORD)
+    if not api_username or not api_password:
+        raise SystemExit(
+            "Credenciales del API faltantes. Define --api-username/--api-password o "
+            f"las variables de entorno {ENV_API_USERNAME}/{ENV_API_PASSWORD}."
+        )
 
     catalog_entries = read_catalog_models(HTML_CATALOG)
     print(f"Referencias catalogadas: {len(catalog_entries)}")
@@ -336,7 +358,7 @@ def main() -> None:
         )
 
     with requests.Session() as session:
-        token = get_api_token(session)
+        token = get_api_token(session, api_username, api_password)
         api_entries = fetch_bmw_api_entries(session, token)
         print(f"Registros BMW obtenidos del API: {len(api_entries)}")
 
