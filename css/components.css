@@ -467,6 +467,44 @@ textarea.form-control {
   gap: var(--space-2);
 }
 
+.client-section__list--meta {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.client-section__list--fasecolda-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.client-section__list--fasecolda-values .client-section__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.client-section__list--fasecolda-values select,
+.client-select {
+  appearance: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  background-color: var(--color-surface);
+  font-size: var(--font-size-300);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 6rem;
+  cursor: pointer;
+}
+
+.client-section__list--fasecolda-values .client-section__value {
+  font-size: var(--font-size-400);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
 .client-section__item {
   display: grid;
   gap: 0.25rem;
