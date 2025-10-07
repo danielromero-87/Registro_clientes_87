@@ -25,6 +25,7 @@ const HEADERS = [
   'Cédula',
   'Necesidad Principal',
   'Busca / Vende',
+  'Año modelo del vehículo',
   'Serie del vehículo',
   'Serie del vehículo 2',
   'Serie del vehículo 3',
@@ -84,7 +85,7 @@ async function loadSheetData() {
     return cache;
   }
 
-  const range = `"${SHEET_NAME}"!A1:P`;
+  const range = `"${SHEET_NAME}"!A1:Q`;
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range

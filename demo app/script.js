@@ -17,6 +17,7 @@ const HEADERS = [
   'Cédula',
   'Necesidad Principal',
   'Busca / Vende',
+  'Año modelo del vehículo',
   'Serie del vehículo',
   'Serie del vehículo 2',
   'Serie del vehículo 3',
@@ -138,6 +139,7 @@ const CLIENT_SECTIONS = [
     fields: [
       { key: 'Necesidad Principal', label: 'Necesidad' },
       { key: 'Busca / Vende', label: 'Tipo' },
+      { key: 'Año modelo del vehículo', label: 'Año modelo' },
       { key: 'Serie del vehículo', label: 'Serie(s)', transform: formatSeries }
     ]
   },

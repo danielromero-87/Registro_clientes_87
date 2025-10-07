@@ -15,6 +15,7 @@ const HEADERS = [
   'Cédula',
   'Necesidad Principal',
   'Busca / Vende',
+  'Año modelo del vehículo',
   'Serie del vehículo',
   'Serie del vehículo 2',
   'Serie del vehículo 3',
@@ -65,6 +66,7 @@ function doPost(e) {
       toSafeString_(payload.clienteCedula),
       toSafeString_(payload.necesidad),
       toSafeString_(payload.tipoVehiculo),
+      toSafeString_(payload.anioModeloVehiculo),
       series[0] || '',
       series[1] || '',
       series[2] || '',
@@ -164,14 +166,32 @@ function getSheet_() {
 }
 
 function ensureHeaders_(sheet) {
-  const currentLastColumn = sheet.getLastColumn();
-  if (currentLastColumn < HEADERS.length) {
-    const missing = HEADERS.length - currentLastColumn;
-    if (currentLastColumn === 0) {
-      sheet.insertColumnsAfter(1, HEADERS.length - 1);
-    } else {
-      sheet.insertColumnsAfter(currentLastColumn, missing);
-    }
+  if (!sheet) {
+    return;
+  }
+
+  const yearHeader = 'Año modelo del vehículo';
+  const buscaHeader = 'Busca / Vende';
+
+  let lastColumn = sheet.getLastColumn();
+
+  if (lastColumn === 0) {
+    sheet.insertColumns(1, HEADERS.length);
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    return;
+  }
+
+  const headerValues = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+
+  if (headerValues.indexOf(yearHeader) === -1) {
+    const buscaIndex = headerValues.indexOf(buscaHeader);
+    const insertAfter = buscaIndex >= 0 ? buscaIndex + 1 : lastColumn;
+    sheet.insertColumnAfter(insertAfter);
+    lastColumn = sheet.getLastColumn();
+  }
+
+  if (lastColumn < HEADERS.length) {
+    sheet.insertColumnsAfter(lastColumn, HEADERS.length - lastColumn);
   }
 
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
