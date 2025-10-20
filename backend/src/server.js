@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { google } from 'googleapis';
+import { getFasecoldaValue } from './fasecolda_scraper.js';
 
 const REQUIRED_ENV = ['SPREADSHEET_ID', 'SHEET_NAME'];
 const missingEnv = REQUIRED_ENV.filter(name => !process.env[name] || !process.env[name].trim());
@@ -13,6 +14,10 @@ const PORT = Number.parseInt(process.env.PORT || '8080', 10);
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const SHEET_NAME = process.env.SHEET_NAME;
 const CACHE_TTL_MS = Number.parseInt(process.env.CACHE_TTL_MS || '60000', 10);
+const FASECOLDA_LOOKUP_TIMEOUT_MS = Number.parseInt(
+  process.env.FASECOLDA_LOOKUP_TIMEOUT_MS || '12000',
+  10
+);
 
 const HEADERS = [
   'Timestamp',
@@ -29,6 +34,8 @@ const HEADERS = [
   'Serie del vehículo',
   'Serie del vehículo 2',
   'Serie del vehículo 3',
+  'Marca',
+  'Marca del vehículo',
   'Presupuesto',
   'Siguiente paso',
   'Observaciones'
@@ -149,6 +156,109 @@ function buildRecord(row, indexMap) {
   return record;
 }
 
+const FASECOLDA_SERIE_HEADERS = [
+  'Serie del vehículo',
+  'Serie del vehículo 2',
+  'Serie del vehículo 3'
+];
+
+function extractSeries(record) {
+  if (!record) {
+    return [];
+  }
+  const seen = new Set();
+  const result = [];
+  FASECOLDA_SERIE_HEADERS.forEach(header => {
+    const raw = record[header];
+    if (!raw) {
+      return;
+    }
+    String(raw)
+      .split(/[\n;,\/]+/)
+      .map(part => part.trim())
+      .filter(Boolean)
+      .forEach(label => {
+        const key = label.toUpperCase();
+        if (seen.has(key)) {
+          return;
+        }
+        seen.add(key);
+        result.push(label);
+      });
+  });
+  return result;
+}
+
+function extractPrimaryYear(value) {
+  if (!value) {
+    return '';
+  }
+  const match = String(value)
+    .trim()
+    .match(/(19|20)\d{2}/);
+  return match ? match[0] : '';
+}
+
+async function resolveFasecolda(record) {
+  if (!record) {
+    return null;
+  }
+
+  const brand = String(record.Marca || record['Marca del vehículo'] || '').trim();
+  const series = extractSeries(record);
+  const year = extractPrimaryYear(record['Año modelo del vehículo']);
+
+  if (!brand || !series.length || !year) {
+    return null;
+  }
+
+  const buildLookupWithTimeout = serie => {
+    const lookupPromise = getFasecoldaValue(brand, serie, year);
+    if (Number.isFinite(FASECOLDA_LOOKUP_TIMEOUT_MS) && FASECOLDA_LOOKUP_TIMEOUT_MS > 0) {
+      return Promise.race([
+        lookupPromise,
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Fasecolda lookup timed out after ${FASECOLDA_LOOKUP_TIMEOUT_MS}ms`));
+          }, FASECOLDA_LOOKUP_TIMEOUT_MS);
+        })
+      ]);
+    }
+    return lookupPromise;
+  };
+
+  const results = await Promise.all(
+    series.map(async serie => {
+      try {
+        const resultado = await buildLookupWithTimeout(serie);
+        return { serie, resultado: resultado ?? null, error: null };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('Error consultando Fasecolda', {
+          brand,
+          serie,
+          year,
+          error: message
+        });
+        return { serie, resultado: null, error: message };
+      }
+    })
+  );
+
+  const timestamps = results
+    .map(item => item?.resultado?.actualizado)
+    .filter(Boolean)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+  return {
+    marca: brand,
+    anio: year,
+    fuente: 'Fasecolda (Vehículos usados)',
+    actualizado: timestamps[0] || null,
+    series: results
+  };
+}
+
 app.get('/api/clientes', async (req, res) => {
   const rawTelefono = req.query.telefono;
 
@@ -185,10 +295,12 @@ app.get('/api/clientes', async (req, res) => {
     }
 
     const record = buildRecord(match, sheetData.indexMap);
+    const fasecolda = await resolveFasecolda(record);
 
     res.json({
       telefono,
-      data: record
+      data: record,
+      fasecolda
     });
   } catch (error) {
     console.error('Error consultando Google Sheets', error);

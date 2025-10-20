@@ -27,6 +27,9 @@ PORT=8080
 SPREADSHEET_ID=TU_ID_DE_SHEET
 SHEET_NAME=Registros
 # GOOGLE_APPLICATION_CREDENTIALS=/ruta/al/archivo/credenciales.json  # Opcional si usas credenciales predeterminadas
+# FASECOLDA_CACHE_TTL_MS=21600000                                 # Opcional: refresco de datos (milisegundos)
+# FASECOLDA_LOOKUP_TIMEOUT_MS=12000                               # Opcional: tope por consulta (milisegundos)
+# FASECOLDA_URL=https://www.fasecolda.com/guia-de-valores/        # Opcional: URL base a scrapear
 ```
 
 > El `SPREADSHEET_ID` es el identificador que aparece en la URL de la hoja: `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit`.
@@ -59,6 +62,44 @@ curl "http://localhost:8080/api/clientes?telefono=3001234567"
 3. El backend responde con JSON estándar; no se requiere JSONP y no se afectan políticas de ORB.
 
 > Si ves `Error: No se pudo cargar el recurso JSONP.` en el frontend, puedes seguir la guía de `demo app/DOCUMENTACION.md` para redeployar el WebApp o, como alternativa inmediata, apuntar `SERVER_API_URL` en `demo app/script.js` a este backend para evitar el flujo JSONP bloqueado.
+
+## Integración con Fasecolda
+
+- En cada consulta exitosa se inicia un navegador headless (Puppeteer) que carga la pestaña **Vehículos usados** y normaliza la información de marca, referencia y año.
+- El resultado se expone en la respuesta JSON bajo la clave `fasecolda` con la estructura:
+
+```json
+{
+  "marca": "BMW",
+  "anio": "2022",
+  "fuente": "Fasecolda (Vehículos usados)",
+  "actualizado": "2025-10-20T15:00:00.000Z",
+  "series": [
+    {
+      "serie": "Serie 3",
+      "error": null,
+      "resultado": {
+        "referenciaBuscada": "Serie 3",
+        "valorSugerido": 143800.0,
+        "coincidencias": [
+          {
+            "referencia": "BMW 320i Sedan",
+            "valorSolicitado": 143800.0,
+            "valores": { "2020": 120000.0, "2021": 135000.0, "2022": 143800.0 }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+- Cada elemento de `series` corresponde a las columnas `Serie del vehículo`, `Serie del vehículo 2` y `Serie del vehículo 3` presentes en la fila del cliente.
+- Dentro de `resultado.coincidencias` se listan **todas** las referencias Fasecolda encontradas para el término consultado (incluye valores numéricos y texto por año modelo).
+- Los datos extraídos se cachean en memoria durante el tiempo configurado en `FASECOLDA_CACHE_TTL_MS` (6 horas por defecto) para reducir el número de scraping.
+- Ajusta `FASECOLDA_LOOKUP_TIMEOUT_MS` si necesitas acotar el tiempo de espera por consulta individual (12 segundos por defecto).
+- `FASECOLDA_URL` te permite cambiar la URL objetivo en caso de que Fasecolda modifique su ruta pública.
+- Solo se consideran valores de Fasecolda con año modelo **a partir de 2000**; solicitudes con años previos devolverán `valorSugerido: null` y `coincidencias` vacías.
 
 ## Próximos pasos
 
