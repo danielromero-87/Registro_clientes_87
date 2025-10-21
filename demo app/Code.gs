@@ -20,12 +20,14 @@ const DEMO_HEADERS = [
   'Cédula',
   'Necesidad Principal',
   'Busca / Vende',
+  'Año modelo del vehículo',
   'Serie del vehículo',
   'Serie del vehículo 2',
   'Serie del vehículo 3',
   'Presupuesto',
   'Siguiente paso',
-  'Observaciones'
+  'Observaciones',
+  'Observaciones #2'
 ];
 
 function doGet(e) {

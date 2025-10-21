@@ -249,6 +249,24 @@ Normalización del catálogo BMW Motorrad, fallback visual por serie y solución
 * Tras actualizar imágenes, servir `consulta-clientes.html` y verificar que la tarjeta muestra la miniatura esperada tanto para autos como para motos.
 * Después de redeployar Apps Script, comprobar en DevTools → Network que `GET https://script.google.com/.../exec?telefono=...` responde 200 sin errores ORB antes de liberar la actualización al equipo.
 
+### v2.3
+
+#### Resumen
+Seguimiento comercial desde la consulta mediante “Observaciones #2”, sin duplicar filas en la hoja de cálculo.
+
+#### Detalles Técnicos
+
+1. **Script de Google (`Code.gs`):**
+   * `HEADERS` añade la columna `Observaciones #2`; `ensureHeaders_` la crea automáticamente.
+   * `doPost` enruta las peticiones con `action: "observaciones2"` hacia `handleObservationUpdate_`, que busca la fila por teléfono, agrega la nota con sello de tiempo y devuelve la ficha actualizada.
+
+2. **Consulta (`consulta-clientes.html`, `demo app/script.js`):**
+   * Se incorporó el formulario accesible bajo “Nueva búsqueda” para capturar notas de seguimiento.
+   * `sendFollowupObservation` usa `fetch` en modo `cors`, recarga la tarjeta con la respuesta y muestra las líneas en la nueva sección “📝 Seguimiento”.
+
+3. **Backends alternos (`backend/src/server.js`, `demo app/Code.gs`):**
+   * Se sincronizaron encabezados y rangos para que la API Node y el Apps Script de demo expongan la nueva columna sin ajustes manuales.
+
 ## 5. Control de Versiones con Git
 
 Para gestionar el código y los cambios a lo largo del tiempo, se utilizó Git y GitHub. Los pasos principales para subir el proyecto fueron:
@@ -340,6 +358,7 @@ python3 -m http.server 8000 -d "demo app"  # detener con Ctrl+C
 3. Confirmar que `demo app/script.js` contiene la URL vigente en `WEBAPP_URL`.
 4. Levantar el servidor local y abrir `http://localhost:8000/index.html`.
 5. Buscar el número telefónico y validar que los datos correspondan a la hoja.
+6. Registrar una nota en “Observaciones #2”, esperar el mensaje de éxito y confirmar en Google Sheets que la nueva línea quedó guardada en la columna correspondiente.
 
 ### 8.5 Notas adicionales
 

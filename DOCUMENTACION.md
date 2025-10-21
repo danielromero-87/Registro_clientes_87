@@ -49,7 +49,14 @@ python3 -m http.server 8000
     *   Utiliza la función `fetch` para enviar estos datos a la URL del Web App de Google Apps Script mediante una petición `POST`.
     *   **Nota importante:** Se utiliza `mode: 'no-cors'` en la petición `fetch`. Esto permite que el formulario envíe datos desde cualquier origen (por ejemplo, un archivo local) al script de Google sin ser bloqueado por las políticas de seguridad del navegador (CORS). La desventaja es que el código JavaScript no puede leer la respuesta del servidor para saber si el registro fue 100% exitoso, por lo que asume el éxito si el envío se completa sin errores de red.
 5.  **Feedback al Usuario:** El formulario despliega un modal accesible con el mensaje "Registro enviado" y se resetea, listo para un nuevo ingreso.
-6.  **Acceso rápido a consultas:** Desde el mismo formulario se puede abrir `consulta-clientes.html` mediante el botón "Buscar cliente", evitando cambiar manualmente de página.
+6.  **Acceso rápido a consultas y seguimiento:** Desde el formulario principal se puede abrir `consulta-clientes.html` con el botón "Buscar cliente". Luego de encontrar una ficha, la interfaz muestra el bloque "Observaciones #2" para registrar la nueva razón o avance asociado a esa visita.
+
+#### Consulta y Observaciones #2
+
+1. Al ingresar un número existente, la tarjeta despliega la sección “📝 Seguimiento” con las observaciones históricas.
+2. El formulario inferior permite escribir una nueva nota, que se envía al mismo Apps Script (`fetch` con `POST` y `mode: 'cors'`).
+3. Tras la confirmación, la tarjeta se refresca con el registro actualizado y la nueva línea queda visible en la columna `Observaciones #2` de Google Sheets (se respeta el salto de línea).
+4. El botón “Nueva búsqueda” limpia tanto la ficha como el formulario de seguimiento para evitar enviar notas contra el número equivocado.
 
 ### Backend (Google Apps Script)
 
@@ -59,9 +66,11 @@ python3 -m http.server 8000
     *   El script se conecta a la hoja de cálculo activa de Google Sheets.
     *   Busca una hoja llamada "Registros".
     *   Si la hoja no existe, la crea y le añade una fila de encabezados con los nombres de cada campo.
-    *   Si la hoja ya existe, asegura que la primera fila tenga el encabezado "Cédula" (añade columnas faltantes antes de escribir los datos).
+    *   Si la hoja ya existe, alinea la fila de encabezados con `HEADERS`, añadiendo columnas faltantes como "Observaciones #2" antes de escribir los datos.
 4.  **Procesamiento de Datos:** El script extrae los datos JSON que vienen en la petición (`e.postData.contents`) y los convierte en un objeto de JavaScript.
-5.  **Escritura en la Hoja:** Los datos se ordenan en un array (`newRow`) —incluyendo `clienteCedula`— y se añaden como una nueva fila al final de la hoja "Registros" usando `sheet.appendRow(newRow)`. Cuando el campo oculto `serieVehiculo` contiene varias selecciones separadas por punto y coma, el script reparte cada valor en las columnas `Serie del vehículo`, `Serie del vehículo 2` y `Serie del vehículo 3` para mantenerlas individuales.
+5.  **Escritura y seguimiento:**
+    *   Para nuevos registros, `doPost` construye `newRow` (con `clienteCedula`, las series distribuidas y `observaciones2`) y la agrega con `sheet.appendRow`.
+    *   Cuando la petición incluye `action: "observaciones2"`, `handleObservationUpdate_` ubica la fila por número telefónico, concatena la nota con un sello de tiempo en `Observaciones #2` y devuelve el registro actualizado sin crear nuevas filas.
 6.  **Liberación del Bloqueo:** Finalmente, `lock.releaseLock()` libera el bloqueo, permitiendo que otras peticiones puedan ser procesadas.
 
 ## 4. Actualizaciones Recientes
@@ -73,6 +82,7 @@ python3 -m http.server 8000
 *   Se reorganiza la escritura de series de vehículo para que cada selección se guarde en columnas independientes dentro de Google Sheets.
 *   Se creó `app-config.js` para centralizar las URLs del backend y compartir la configuración entre registro y consulta.
 *   Se añadió `consulta-clientes.html` como interfaz pública de búsqueda por teléfono y un botón de acceso directo desde el formulario de registro.
+*   Se habilitó la captura de **Observaciones #2** desde la consulta; el formulario agrega la nota al registro existente y App Script conserva el historial con fecha y hora.
 *   Se implementó un sistema de diseño modular (`css/base.css`, `css/components.css`, `css/layout.css`, `css/theme.css`) con tokens corporativos, componentes reutilizables y soporte responsive.
 
 ## 5. Control de Versiones con Git
@@ -202,8 +212,24 @@ Esta sección resume cronológicamente las acciones realizadas para que la demo 
  - El area de medios (`clientMedia`) se limpia y oculta entre consultas para evitar que aparezcan imagenes residuales cuando se realiza una nueva busqueda.
 
 4. **Verificacion sugerida**
-  - Servir el proyecto con `python3 -m http.server 8000`, abrir `http://localhost:8000/consulta-clientes.html`, buscar un cliente real y confirmar la aparicion de las miniaturas cargadas desde `imagenes/`.
-  - Al agregar nuevos modelos al Google Sheet, replicar el nombre normalizado del valor en el archivo de imagen correspondiente. En caso de duda, convertir el texto a minusculas, reemplazar espacios por guiones y eliminar tildes.
+ - Servir el proyecto con `python3 -m http.server 8000`, abrir `http://localhost:8000/consulta-clientes.html`, buscar un cliente real y confirmar la aparicion de las miniaturas cargadas desde `imagenes/`.
+ - Al agregar nuevos modelos al Google Sheet, replicar el nombre normalizado del valor en el archivo de imagen correspondiente. En caso de duda, convertir el texto a minusculas, reemplazar espacios por guiones y eliminar tildes.
+
+### 8.7 Observaciones #2 (enero 2025)
+
+1. **Objetivo**
+   - Permitir que los asesores registren nuevos avances desde la consulta sin duplicar filas ni perder el historial de comentarios.
+
+2. **Cambios clave**
+   - `Code.gs` amplía `HEADERS` con `Observaciones #2` y la función `handleObservationUpdate_` localiza la fila por teléfono, agrega la nota con `[YYYY-MM-DD HH:MM]` y devuelve la ficha completa.
+   - `consulta-clientes.html` incorpora el formulario accesible bajo “Nueva búsqueda”; `demo app/script.js` captura el envío, usa `fetch` en modo `cors` y refresca la tarjeta con el registro actualizado.
+   - El backend Node (`backend/src/server.js`) y el Apps Script de demo (`demo app/Code.gs`) también incluyen la nueva columna para mantener compatibilidad.
+
+3. **Validación sugerida**
+   1. Consultar un número existente y confirmar que la sección “📝 Seguimiento” liste las observaciones previas (respetando saltos de línea).
+   2. Escribir una nueva nota en “Observaciones #2” y enviarla; el formulario muestra mensaje de éxito y se limpia.
+   3. Revisar la tarjeta actualizada y la hoja `Registros` para comprobar que la columna `Observaciones #2` tenga la nueva línea con sello de tiempo.
+   4. Presionar “Nueva búsqueda” para limpiar la ficha antes de consultar otro número.
 
 ## 9. Catálogo BMW Motorrad (scraping)
 

@@ -38,7 +38,8 @@ const HEADERS = [
   'Marca del vehículo',
   'Presupuesto',
   'Siguiente paso',
-  'Observaciones'
+  'Observaciones',
+  'Observaciones #2'
 ];
 
 const PHONE_HEADER = 'Número telefónico';
@@ -92,7 +93,7 @@ async function loadSheetData() {
     return cache;
   }
 
-  const range = `"${SHEET_NAME}"!A1:Q`;
+  const range = `"${SHEET_NAME}"!A1:T`;
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range

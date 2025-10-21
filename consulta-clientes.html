@@ -42,6 +42,23 @@
         <div class="client-card__actions">
           <button type="button" id="newSearchButton" class="button button--outline">Nueva búsqueda</button>
         </div>
+        <section id="clientFollowup" class="client-followup hidden" aria-labelledby="followupTitle">
+          <header class="client-followup__header">
+            <h3 id="followupTitle" class="client-followup__title">Observaciones #2</h3>
+            <p class="client-followup__subtitle">Registra los nuevos avances o motivos compartidos por el cliente durante esta consulta.</p>
+          </header>
+          <form id="followupForm" class="form client-followup__form" novalidate>
+            <input type="hidden" id="followupTelefono" name="telefono" value="">
+            <div class="form-group">
+              <label for="followupObservacion" class="form-label">Nueva observación</label>
+              <textarea id="followupObservacion" name="observaciones2" class="form-control" rows="4" placeholder="Ej. Cliente confirmó visita el viernes." required></textarea>
+            </div>
+            <div class="client-followup__actions">
+              <button type="submit" id="followupSubmit" class="button button--primary button--full">Guardar observación</button>
+            </div>
+            <p id="followupFeedback" class="feedback" role="status" aria-live="polite"></p>
+          </form>
+        </section>
       </article>
     </section>
   </div>

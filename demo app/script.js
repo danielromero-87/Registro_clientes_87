@@ -23,11 +23,12 @@ const HEADERS = [
   'Serie del vehículo 3',
   'Presupuesto',
   'Siguiente paso',
-  'Observaciones'
+  'Observaciones',
+  'Observaciones #2'
 ];
 
 const FASECOLDA_BRANDS = ['BMW', 'MINI'];
-const DEFAULT_FASECOLDA_DATASET_PATHS = ['bmw_fasecolda_values.json', 'mini_fasecolda_values.json'];
+const DEFAULT_FASECOLDA_DATASET_PATHS = ['bmw_fasecolda_values.json'];
 const ABSOLUTE_URL_PATTERN = /^[a-z]+:\/\//i;
 const FASECOLDA_DATASET_PATHS = (() => {
   const configuredPaths = Array.isArray(CONFIG.fasecoldaDatasetPaths)
@@ -177,6 +178,8 @@ const hasJsonpEndpoint = Boolean(WEBAPP_URL);
 
 
 
+const OBSERVACIONES_FOLLOWUP_FIELD = 'Observaciones #2';
+
 const CLIENT_SECTIONS = [
   {
     title: '🧍 Información Personal',
@@ -208,11 +211,21 @@ const CLIENT_SECTIONS = [
   {
     title: '💰 Detalles Financieros',
     fields: [
-      { key: 'Presupuesto', label: 'Presupuesto', transform: formatPresupuesto },
-      { key: 'Observaciones', label: 'Observaciones' }
+      { key: 'Presupuesto', label: 'Presupuesto', transform: formatPresupuesto }
+    ]
+  },
+  {
+    title: '📝 Seguimiento',
+    fields: [
+      { key: 'Observaciones', label: 'Observaciones' },
+      { key: OBSERVACIONES_FOLLOWUP_FIELD, label: 'Observaciones #2', transform: formatFollowupNotes }
     ]
   }
 ];
+
+let lastClientRecord = null;
+let lastFasecoldaData = null;
+let lastClientTelefono = '';
 
 function isMeaningfulFasecoldaLabel(label) {
   if (!label) {
@@ -234,6 +247,13 @@ const clientCard = document.getElementById('clientCard');
 const clientDetails = document.getElementById('clientDetails');
 const clientMedia = document.getElementById('clientMedia');
 const newSearchButton = document.getElementById('newSearchButton');
+const clientFollowup = document.getElementById('clientFollowup');
+const followupForm = document.getElementById('followupForm');
+const followupTelefonoInput = document.getElementById('followupTelefono');
+const followupObservacionInput = document.getElementById('followupObservacion');
+const followupFeedback = document.getElementById('followupFeedback');
+const followupSubmit = document.getElementById('followupSubmit');
+const followupSubmitInitialLabel = followupSubmit ? followupSubmit.textContent : 'Guardar observación';
 
 if (form && telefonoInput && searchButton && feedback && clientCard && clientDetails) {
   form.addEventListener('submit', async event => {
@@ -271,10 +291,55 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
       clearFeedback();
       telefonoInput.value = '';
       telefonoInput.focus();
+      hideFollowupSection();
     });
   }
 } else {
   console.error('No se pudieron inicializar los elementos requeridos de la interfaz.');
+}
+
+if (followupForm && followupObservacionInput && followupSubmit) {
+  followupForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    clearFollowupFeedback();
+
+    const telefono = lastClientTelefono || normalizeTelefono(followupTelefonoInput ? followupTelefonoInput.value : '') || '';
+    if (!telefono) {
+      showFollowupFeedback('❌ Busca un cliente antes de registrar observaciones.', 'error');
+      return;
+    }
+
+    const nota = formatGenericValue(followupObservacionInput.value);
+    if (!nota) {
+      showFollowupFeedback('❌ Escribe la observación antes de enviarla.', 'error');
+      followupObservacionInput.focus();
+      return;
+    }
+
+    if (!WEBAPP_URL) {
+      showFollowupFeedback('❌ Configura APP_CONFIG.webAppUrl para enviar observaciones.', 'error');
+      return;
+    }
+
+    setFollowupLoading(true);
+
+    try {
+      const responseBody = await sendFollowupObservation(telefono, nota);
+      const updatedRecord = extractRecordOrThrow(responseBody);
+      lastClientRecord = updatedRecord;
+      lastClientTelefono = telefono;
+      renderClientDetails(lastClientRecord, lastFasecoldaData);
+      showFollowupFeedback('✅ Observación registrada correctamente.', 'success');
+      followupObservacionInput.value = '';
+      showFollowupSection();
+    } catch (error) {
+      const message = error && error.message ? error.message : 'No se pudo registrar la observación.';
+      showFollowupFeedback(`❌ ${message}`, 'error');
+      console.error(error);
+    } finally {
+      setFollowupLoading(false);
+    }
+  });
 }
 
 function normalizeTelefono(value) {
@@ -284,6 +349,10 @@ function normalizeTelefono(value) {
 async function fetchCliente(telefono) {
   setLoading(true);
   hideClientCard();
+  hideFollowupSection();
+  lastClientRecord = null;
+  lastFasecoldaData = null;
+  lastClientTelefono = '';
   let restError;
   let payload;
   try {
@@ -310,7 +379,13 @@ async function fetchCliente(telefono) {
       throw new Error('Respuesta del servidor incompleta.');
     }
 
-    renderClientDetails(payload.record, payload.fasecolda || null);
+    lastClientRecord = payload.record;
+    lastFasecoldaData = payload.fasecolda || null;
+    lastClientTelefono = telefono;
+
+    renderClientDetails(lastClientRecord, lastFasecoldaData);
+    clearFollowupFeedback();
+    showFollowupSection();
     showFeedback('✅ Cliente encontrado exitosamente', 'success');
   } catch (error) {
     console.error(error);
@@ -320,6 +395,7 @@ async function fetchCliente(telefono) {
     } else {
       showFeedback(`❌ ${message}`, 'error');
     }
+    hideFollowupSection();
   } finally {
     setLoading(false);
   }
@@ -467,6 +543,58 @@ function fetchClienteJsonp(telefono) {
     script.onerror = () => {
       cleanup();
       reject(new Error('No se pudo cargar el recurso JSONP.'));
+    };
+
+    document.body.appendChild(script);
+  });
+}
+
+function sendFollowupObservation(telefono, observacion) {
+  if (!WEBAPP_URL) {
+    return Promise.reject(new Error('WEBAPP_URL no está configurada.'));
+  }
+
+  return new Promise((resolve, reject) => {
+    const callbackName = `observacionCallback_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const params = new URLSearchParams({
+      action: 'observaciones2',
+      telefono,
+      clienteTelefono: telefono,
+      observaciones2: observacion,
+      callback: callbackName
+    });
+
+    const script = document.createElement('script');
+    script.src = `${WEBAPP_URL}?${params.toString()}`;
+    script.async = true;
+
+    let timeoutId;
+
+    const cleanup = () => {
+      window.clearTimeout(timeoutId);
+      delete window[callbackName];
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+
+    timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('Tiempo de espera agotado al registrar observación.'));
+    }, 10000);
+
+    window[callbackName] = payload => {
+      cleanup();
+      try {
+        resolve(payload);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('No se pudo enviar la observación (error de red).'));
     };
 
     document.body.appendChild(script);
@@ -1180,7 +1308,8 @@ async function loadFasecoldaDataset() {
         continue;
       }
       try {
-        const response = await fetch(trimmedPath, { cache: 'no-cache' });
+        const cacheBustPath = `${trimmedPath}${trimmedPath.includes('?') ? '&' : '?'}_=${Date.now()}`;
+        const response = await fetch(cacheBustPath, { cache: 'no-store' });
         if (!response.ok) {
           console.warn(`No se pudo cargar ${trimmedPath}: HTTP ${response.status}`);
           continue;
@@ -1680,6 +1809,11 @@ function singularizeDescapotables(value) {
   return String(value).replace(DESCAPOTABLES_PATTERN, match => match.replace(/s$/i, ''));
 }
 
+function formatFollowupNotes(_record, value) {
+  const formatted = formatGenericValue(value);
+  return formatted || '';
+}
+
 function formatPresupuesto(_record, value) {
   if (value === null || value === undefined || value === '') {
     return '';
@@ -1739,4 +1873,69 @@ function hideClientCard() {
   } else {
     window.setTimeout(finalize, 250);
   }
+}
+
+function showFollowupSection() {
+  if (!clientFollowup) {
+    return;
+  }
+
+  if (!lastClientTelefono) {
+    hideFollowupSection();
+    return;
+  }
+
+  clientFollowup.classList.remove('hidden');
+
+  if (followupTelefonoInput) {
+    followupTelefonoInput.value = lastClientTelefono;
+  }
+}
+
+function hideFollowupSection() {
+  if (clientFollowup) {
+    clientFollowup.classList.add('hidden');
+  }
+
+  if (followupForm) {
+    followupForm.reset();
+  } else if (followupObservacionInput) {
+    followupObservacionInput.value = '';
+  }
+
+  if (followupTelefonoInput) {
+    followupTelefonoInput.value = '';
+  }
+
+  clearFollowupFeedback();
+}
+
+function setFollowupLoading(isLoading) {
+  if (!followupSubmit) {
+    return;
+  }
+
+  followupSubmit.disabled = Boolean(isLoading);
+  followupSubmit.textContent = isLoading ? 'Guardando...' : followupSubmitInitialLabel;
+}
+
+function showFollowupFeedback(message, type) {
+  if (!followupFeedback) {
+    if (type === 'error') {
+      window.alert(message);
+    }
+    return;
+  }
+
+  const modifier = type ? `feedback--${type}` : '';
+  followupFeedback.textContent = message;
+  followupFeedback.className = ['feedback', modifier].filter(Boolean).join(' ');
+}
+
+function clearFollowupFeedback() {
+  if (!followupFeedback) {
+    return;
+  }
+  followupFeedback.textContent = '';
+  followupFeedback.className = 'feedback';
 }
