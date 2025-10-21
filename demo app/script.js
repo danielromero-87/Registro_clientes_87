@@ -26,7 +26,68 @@ const HEADERS = [
   'Observaciones'
 ];
 
-const FASECOLDA_DATASET_PATH = 'bmw_fasecolda_values.json';
+const FASECOLDA_BRANDS = ['BMW', 'MINI'];
+const DEFAULT_FASECOLDA_DATASET_PATHS = ['bmw_fasecolda_values.json', 'mini_fasecolda_values.json'];
+const ABSOLUTE_URL_PATTERN = /^[a-z]+:\/\//i;
+const FASECOLDA_DATASET_PATHS = (() => {
+  const configuredPaths = Array.isArray(CONFIG.fasecoldaDatasetPaths)
+    ? CONFIG.fasecoldaDatasetPaths
+    : (CONFIG.fasecoldaDatasetPath ? [CONFIG.fasecoldaDatasetPath] : []);
+
+  const fallbackBasesInput = Array.isArray(CONFIG.fasecoldaDatasetFallbackBases)
+    ? CONFIG.fasecoldaDatasetFallbackBases
+    : (CONFIG.fasecoldaDatasetFallbackBase ? [CONFIG.fasecoldaDatasetFallbackBase] : []);
+
+  const fallbackBases = [];
+  fallbackBasesInput.forEach(baseValue => {
+    const trimmedBase = String(baseValue || '').trim();
+    if (!trimmedBase) {
+      return;
+    }
+    const normalizedBase = trimmedBase.endsWith('/') ? trimmedBase : `${trimmedBase}/`;
+    if (!fallbackBases.includes(normalizedBase)) {
+      fallbackBases.push(normalizedBase);
+    }
+  });
+
+  const basePaths = [];
+  [...configuredPaths, ...DEFAULT_FASECOLDA_DATASET_PATHS].forEach(pathValue => {
+    const trimmedPath = String(pathValue || '').trim();
+    if (!trimmedPath || basePaths.includes(trimmedPath)) {
+      return;
+    }
+    basePaths.push(trimmedPath);
+  });
+
+  const resolvedGroups = [];
+
+  basePaths.forEach(pathValue => {
+    const variants = [];
+
+    if (pathValue && !variants.includes(pathValue)) {
+      variants.push(pathValue);
+    }
+
+    if (!ABSOLUTE_URL_PATTERN.test(pathValue) && fallbackBases.length) {
+      fallbackBases.forEach(base => {
+        try {
+          const absoluteUrl = new URL(pathValue, base).toString();
+          if (!variants.includes(absoluteUrl)) {
+            variants.push(absoluteUrl);
+          }
+        } catch (error) {
+          // Ignore invalid base URLs silently to avoid breaking the UI.
+        }
+      });
+    }
+
+    if (variants.length) {
+      resolvedGroups.push(variants);
+    }
+  });
+
+  return resolvedGroups;
+})();
 const FASECOLDA_BREAK_TOKENS = new Set([
   'MT',
   'AT',
@@ -53,6 +114,7 @@ const FASECOLDA_BREAK_TOKENS = new Set([
 const FASECOLDA_SKIP_TOKENS = new Set([
   'SERIE',
   'SERIES',
+  'MOTORRAD',
   'SUVS',
   'THE',
   'UTILITARIO',
@@ -223,11 +285,11 @@ async function fetchCliente(telefono) {
   setLoading(true);
   hideClientCard();
   let restError;
-  let record;
+  let payload;
   try {
     if (canUseServerApi) {
       try {
-        record = await fetchClienteRest(telefono);
+        payload = await fetchClienteRest(telefono);
       } catch (error) {
         restError = error;
         if (!shouldFallbackToJsonp(error)) {
@@ -237,14 +299,18 @@ async function fetchCliente(telefono) {
       }
     }
 
-    if (!record) {
+    if (!payload) {
       if (!hasJsonpEndpoint) {
         throw restError || new Error('No se pudo conectar con el endpoint configurado.');
       }
-      record = await fetchClienteJsonp(telefono);
+      payload = await fetchClienteJsonp(telefono);
     }
 
-    renderClientDetails(record);
+    if (!payload || !payload.record) {
+      throw new Error('Respuesta del servidor incompleta.');
+    }
+
+    renderClientDetails(payload.record, payload.fasecolda || null);
     showFeedback('✅ Cliente encontrado exitosamente', 'success');
   } catch (error) {
     console.error(error);
@@ -278,7 +344,13 @@ async function fetchClienteRest(telefono) {
     throw new Error(message);
   }
 
-  return extractRecordOrThrow(body);
+  const record = extractRecordOrThrow(body);
+
+  return {
+    record,
+    fasecolda: body && Object.prototype.hasOwnProperty.call(body, 'fasecolda') ? body.fasecolda : null,
+    telefono: body && Object.prototype.hasOwnProperty.call(body, 'telefono') ? body.telefono : undefined
+  };
 }
 
 function buildServerApiUrl(telefono) {
@@ -382,7 +454,11 @@ function fetchClienteJsonp(telefono) {
       cleanup();
       try {
         const record = extractRecordOrThrow(payload);
-        resolve(record);
+        resolve({
+          record,
+          fasecolda: payload && Object.prototype.hasOwnProperty.call(payload, 'fasecolda') ? payload.fasecolda : null,
+          telefono: payload && Object.prototype.hasOwnProperty.call(payload, 'telefono') ? payload.telefono : undefined
+        });
       } catch (error) {
         reject(error);
       }
@@ -421,7 +497,7 @@ function extractRecordOrThrow(payload) {
   return payload;
 }
 
-function renderClientDetails(record) {
+function renderClientDetails(record, fasecoldaData) {
   if (!record || typeof record !== 'object') {
     throw new Error('Respuesta sin datos de cliente.');
   }
@@ -472,7 +548,7 @@ function renderClientDetails(record) {
   });
 
   const currentRenderId = ++mediaRenderId;
-  renderVehicleMedia(record, currentRenderId).catch(error => {
+  renderVehicleMedia(record, fasecoldaData, currentRenderId).catch(error => {
     console.error('Error al cargar la imagen del vehículo', error);
   });
 
@@ -480,7 +556,7 @@ function renderClientDetails(record) {
   requestAnimationFrame(() => clientCard.classList.add('is-visible'));
 }
 
-async function renderVehicleMedia(record, requestId) {
+async function renderVehicleMedia(record, fasecoldaData, requestId) {
   if (!clientMedia) {
     return;
   }
@@ -488,8 +564,52 @@ async function renderVehicleMedia(record, requestId) {
   clientMedia.classList.add('hidden');
   clientMedia.innerHTML = '';
 
-  const labels = getVehicleReferenceLabels(record);
-  if (!labels.length) {
+  const referenceCandidates = getVehicleReferenceLabels(record);
+  const selectionOrder = [];
+  const selectionSet = new Set();
+  const variantMap = new Map();
+  const variantLabels = new Set();
+
+  referenceCandidates.forEach(({ selection, variants }) => {
+    if (!selectionSet.has(selection)) {
+      selectionSet.add(selection);
+      selectionOrder.push(selection);
+    }
+    variants.forEach(variant => {
+      const normalizedVariant = formatGenericValue(variant);
+      if (!normalizedVariant || !isMeaningfulFasecoldaLabel(normalizedVariant)) {
+        return;
+      }
+      variantLabels.add(normalizedVariant);
+      if (!variantMap.has(normalizedVariant)) {
+        variantMap.set(normalizedVariant, new Set());
+      }
+      variantMap.get(normalizedVariant).add(selection);
+    });
+  });
+
+  const preferredYear = extractPreferredYear(record);
+
+  if (renderFasecoldaFromApi(record, fasecoldaData, requestId, selectionOrder, preferredYear)) {
+    return;
+  }
+
+  const renderFallbackSelections = (targets, options = {}) => {
+    const fallbackTargets = Array.isArray(targets) && targets.length ? targets : selectionOrder;
+    if (!fallbackTargets.length) {
+      return;
+    }
+    renderSelectionFallbackSections(clientMedia, fallbackTargets, {
+      titleText: options.titleText || (fallbackTargets.length > 1
+        ? '🚘 Selecciones del formulario'
+        : '🚘 Selección del formulario'),
+      description: options.description || 'Sin coincidencias disponibles en Fasecolda.',
+      clear: options.clear ?? clientMedia.childElementCount === 0
+    });
+  };
+
+  if (!variantLabels.size) {
+    renderFallbackSelections(selectionOrder, { clear: true });
     return;
   }
 
@@ -498,6 +618,7 @@ async function renderVehicleMedia(record, requestId) {
     fasecoldaIndex = await fasecoldaIndexPromise;
   } catch (error) {
     console.error('No se pudo cargar el dataset de Fasecolda.', error);
+    renderFallbackSelections(selectionOrder, { clear: true });
     return;
   }
 
@@ -507,31 +628,44 @@ async function renderVehicleMedia(record, requestId) {
 
   const { map: fasecoldaMap, entries: fasecoldaEntries } = fasecoldaIndex;
   if (!fasecoldaMap || !fasecoldaEntries) {
+    renderFallbackSelections(selectionOrder, { clear: true });
     return;
   }
 
   const seenCodes = new Set();
   const rawMatches = [];
+  const matchedSelections = new Set();
 
-  labels.forEach(label => {
+  Array.from(variantLabels).forEach(label => {
     const normalizedLabel = normalizeFasecoldaKey(label);
     if (!normalizedLabel) {
       return;
     }
+    const brand = detectFasecoldaBrand(label);
     const prefixes = buildFasecoldaReferencePrefixes(label);
+    const owningSelections = variantMap.get(label) || new Set();
+
     const appendMatch = entry => {
       if (!entry) {
+        return;
+      }
+      if (brand && !referenceStartsWithBrand(entry, brand)) {
         return;
       }
       if (!entryMatchesPrefixes(entry, prefixes)) {
         return;
       }
-      const uniqueId = entry.codigo || `${entry.key}-${entry.referencia}`;
+      const uniqueId = getFasecoldaEntryId(entry);
       if (seenCodes.has(uniqueId)) {
         return;
       }
       seenCodes.add(uniqueId);
-      rawMatches.push({ originalLabel: label, entry });
+      owningSelections.forEach(sel => matchedSelections.add(sel));
+      rawMatches.push({
+        originalLabel: label,
+        entry,
+        owningSelections: Array.from(owningSelections)
+      });
     };
 
     const directMatch = fasecoldaMap.get(normalizedLabel);
@@ -545,16 +679,26 @@ async function renderVehicleMedia(record, requestId) {
   });
 
   if (!rawMatches.length || requestId !== mediaRenderId) {
+    if (requestId === mediaRenderId) {
+      const missingSelections = selectionOrder.filter(selection => !matchedSelections.has(selection));
+      renderFallbackSelections(missingSelections.length ? missingSelections : selectionOrder, { clear: true });
+    }
     return;
   }
 
-  const enrichedMatches = rawMatches.map(({ originalLabel, entry }) => {
+  const enrichedMatches = rawMatches.map(({ originalLabel, entry, owningSelections }) => {
     const { sortedValues, hasValues } = buildFasecoldaYearOptions(entry.valores);
+    const rangeLabel = sortedValues.length
+      ? `${sortedValues[0].year}-${sortedValues[sortedValues.length - 1].year}`
+      : '2000-2026';
     return {
       originalLabel,
       entry,
       sortedValues,
-      hasValues
+      hasValues,
+      owningSelections,
+      rangeLabel,
+      preferredYear
     };
   });
 
@@ -576,6 +720,21 @@ async function renderVehicleMedia(record, requestId) {
   });
 
   const references = [];
+  const referenceIds = new Set();
+
+  const pushReference = match => {
+    if (!match || !match.entry) {
+      return;
+    }
+    const refId = getFasecoldaEntryId(match.entry);
+    if (refId && referenceIds.has(refId)) {
+      return;
+    }
+    if (refId) {
+      referenceIds.add(refId);
+    }
+    references.push(match);
+  };
 
   labelOrder.forEach(originalLabel => {
     const group = labelGroups.get(originalLabel);
@@ -583,22 +742,22 @@ async function renderVehicleMedia(record, requestId) {
       return;
     }
     const preferred = group.withValues.shift() || group.withoutValues.shift();
-    if (preferred && !references.includes(preferred)) {
-      references.push(preferred);
-    }
+    pushReference(preferred);
   });
 
   labelGroups.forEach(group => {
-    [...group.withValues, ...group.withoutValues].forEach(match => {
-      if (!references.includes(match)) {
-        references.push(match);
-      }
-    });
+    [...group.withValues, ...group.withoutValues].forEach(pushReference);
   });
 
   if (!references.length || requestId !== mediaRenderId) {
+    renderFallbackSelections(selectionOrder, { clear: true });
     return;
   }
+
+  const matchedSelectionsFinal = new Set();
+  references.forEach(match => {
+    (match.owningSelections || []).forEach(selection => matchedSelectionsFinal.add(selection));
+  });
 
   const titleEl = document.createElement('h3');
   titleEl.className = 'client-section__title';
@@ -610,6 +769,7 @@ async function renderVehicleMedia(record, requestId) {
   let activeIndex = 0;
 
   const renderContainer = document.createElement('div');
+  renderContainer.className = 'client-media__container';
 
   const renderReferenceSection = index => {
     if (requestId !== mediaRenderId) {
@@ -621,24 +781,38 @@ async function renderVehicleMedia(record, requestId) {
       return;
     }
 
-    const { originalLabel, entry, sortedValues, hasValues } = match;
+    const {
+      originalLabel,
+      entry,
+      sortedValues,
+      owningSelections,
+      rangeLabel: referenceRange,
+      preferredYear: referencePreferredYear
+    } = match;
+    const selectionLabel = owningSelections && owningSelections.length ? owningSelections[0] : originalLabel;
+    const displaySelection = singularizeDescapotables(selectionLabel);
+    const normalizedSelectionKey = normalizeFasecoldaKey(selectionLabel);
+    const normalizedReferenceKey = normalizeFasecoldaKey(entry.referencia);
 
     const sectionEl = document.createElement('section');
     sectionEl.className = 'client-section';
 
     const headingEl = document.createElement('h4');
     headingEl.className = 'client-section__title';
-    headingEl.textContent = entry.referencia || singularizeDescapotables(originalLabel);
+    headingEl.textContent = displaySelection || singularizeDescapotables(originalLabel);
     sectionEl.appendChild(headingEl);
 
     const metaList = document.createElement('div');
     metaList.className = 'client-section__list client-section__list--meta';
     metaList.appendChild(createClientFieldItem('Código Fasecolda', entry.codigo || 'Sin información'));
-    if (entry.serie && normalizeFasecoldaKey(entry.serie) !== normalizeFasecoldaKey(entry.referencia)) {
+    if (entry.serie && normalizeFasecoldaKey(entry.serie) !== normalizedReferenceKey) {
       metaList.appendChild(createClientFieldItem('Serie Fasecolda', entry.serie));
     }
-    if (normalizeFasecoldaKey(originalLabel) !== normalizeFasecoldaKey(entry.referencia)) {
-      metaList.appendChild(createClientFieldItem('Selección formulario', singularizeDescapotables(originalLabel)));
+    if (entry.referencia) {
+      metaList.appendChild(createClientFieldItem('Referencia Fasecolda', entry.referencia));
+    }
+    if (displaySelection && (!entry.referencia || normalizedSelectionKey !== normalizedReferenceKey)) {
+      metaList.appendChild(createClientFieldItem('Selección formulario', displaySelection));
     }
     if (entry.tipologia) {
       metaList.appendChild(createClientFieldItem('Tipología', entry.tipologia));
@@ -651,58 +825,11 @@ async function renderVehicleMedia(record, requestId) {
     const valuesList = document.createElement('div');
     valuesList.className = 'client-section__list client-section__list--fasecolda-values';
 
-    if (!hasValues || !sortedValues.length) {
-      valuesList.appendChild(createClientFieldItem('2010-2026', 'Sin valores disponibles en el rango.'));
-    } else {
-      const selectItem = document.createElement('div');
-      selectItem.className = 'client-section__item';
-
-      const selectLabel = document.createElement('span');
-      selectLabel.className = 'client-section__label';
-      selectLabel.textContent = 'Año';
-      selectItem.appendChild(selectLabel);
-
-      const select = document.createElement('select');
-      select.className = 'client-select';
-
-      sortedValues.forEach(({ year, value }) => {
-        const option = document.createElement('option');
-        option.value = String(year);
-        option.textContent = year;
-        option.dataset.valor = value;
-        select.appendChild(option);
-      });
-
-      selectItem.appendChild(select);
-      valuesList.appendChild(selectItem);
-
-      const valueItem = document.createElement('div');
-      valueItem.className = 'client-section__item';
-
-      const valueLabel = document.createElement('span');
-      valueLabel.className = 'client-section__label';
-      valueLabel.textContent = 'Valor sugerido';
-      valueItem.appendChild(valueLabel);
-
-      const valueDisplay = document.createElement('span');
-      valueDisplay.className = 'client-section__value';
-      valueDisplay.textContent = 'Sin información';
-      valueItem.appendChild(valueDisplay);
-
-      const updateDisplay = () => {
-        const selectedOption = select.options[select.selectedIndex];
-        const rawValue = selectedOption ? Number(selectedOption.dataset.valor) : NaN;
-        valueDisplay.textContent = formatFasecoldaCurrency(rawValue) || 'Sin información';
-      };
-
-      select.addEventListener('change', updateDisplay);
-      if (select.options.length) {
-        select.selectedIndex = select.options.length - 1;
-      }
-      updateDisplay();
-
-      valuesList.appendChild(valueItem);
-    }
+    appendFasecoldaYearSelector(valuesList, sortedValues, {
+      preferredYear: referencePreferredYear,
+      rangeLabel: referenceRange,
+      emptyMessage: 'Sin valores disponibles en el rango consultado.'
+    });
 
     sectionEl.appendChild(valuesList);
     renderContainer.appendChild(sectionEl);
@@ -727,7 +854,11 @@ async function renderVehicleMedia(record, requestId) {
     references.forEach((match, index) => {
       const option = document.createElement('option');
       option.value = String(index);
-      option.textContent = match.entry.referencia || singularizeDescapotables(match.originalLabel);
+      const selectionLabel = match.owningSelections && match.owningSelections.length
+        ? match.owningSelections[0]
+        : match.originalLabel;
+      const displaySelection = singularizeDescapotables(selectionLabel);
+      option.textContent = displaySelection || match.entry.referencia || singularizeDescapotables(match.originalLabel);
       selectorSelect.appendChild(option);
     });
 
@@ -747,19 +878,215 @@ async function renderVehicleMedia(record, requestId) {
   clientMedia.appendChild(renderContainer);
   renderReferenceSection(activeIndex);
 
+  const unmatchedSelections = selectionOrder.filter(selection => !matchedSelectionsFinal.has(selection));
+  if (unmatchedSelections.length) {
+    renderSelectionFallbackSections(clientMedia, unmatchedSelections, {
+      titleText: unmatchedSelections.length > 1
+        ? '🚘 Selecciones sin valoración'
+        : '🚘 Selección sin valoración',
+      description: 'Sin coincidencias disponibles en Fasecolda.'
+    });
+  }
+
   if (requestId === mediaRenderId) {
     clientMedia.classList.remove('hidden');
   }
 }
 
-function getVehicleReferenceLabels(record) {
+function renderFasecoldaFromApi(record, fasecoldaData, requestId, selectionOrder, preferredYear) {
+  if (!fasecoldaData || typeof fasecoldaData !== 'object') {
+    return false;
+  }
+
+  const seriesList = Array.isArray(fasecoldaData.series) ? fasecoldaData.series.filter(Boolean) : [];
+  if (!seriesList.length) {
+    return false;
+  }
+
+  if (requestId !== mediaRenderId) {
+    return true;
+  }
+
+  const coveredSelections = new Set();
+
+  const titleEl = document.createElement('h3');
+  titleEl.className = 'client-section__title';
+  titleEl.textContent = seriesList.length > 1
+    ? '📊 Valores sugeridos Fasecolda'
+    : '📊 Valor sugerido Fasecolda';
+  clientMedia.appendChild(titleEl);
+
+  seriesList.forEach((seriesItem, index) => {
+    const sectionEl = document.createElement('section');
+    sectionEl.className = 'client-section';
+
+    const serieLabelRaw = seriesItem && seriesItem.serie ? seriesItem.serie : selectionOrder[index] || 'Serie del formulario';
+    const serieLabel = singularizeDescapotables(formatGenericValue(serieLabelRaw)) || 'Serie del formulario';
+    const normalizedSerieKey = normalizeFasecoldaKey(serieLabelRaw);
+    if (normalizedSerieKey) {
+      coveredSelections.add(normalizedSerieKey);
+    }
+
+    const headingEl = document.createElement('h4');
+    headingEl.className = 'client-section__title';
+    headingEl.textContent = serieLabel;
+    sectionEl.appendChild(headingEl);
+
+    const metaList = document.createElement('div');
+    metaList.className = 'client-section__list client-section__list--meta';
+    metaList.appendChild(createClientFieldItem('Serie consultada', serieLabel));
+
+    if (fasecoldaData.marca) {
+      metaList.appendChild(createClientFieldItem('Marca (formulario)', formatGenericValue(fasecoldaData.marca)));
+    }
+
+    const resultado = seriesItem && seriesItem.resultado;
+
+    if (resultado && resultado.marca) {
+      metaList.appendChild(createClientFieldItem('Marca Fasecolda', formatGenericValue(resultado.marca)));
+    }
+
+    const consultaYear = resultado && resultado.anioSolicitado ? resultado.anioSolicitado : preferredYear;
+    if (consultaYear) {
+      metaList.appendChild(createClientFieldItem('Año consultado', consultaYear));
+    }
+
+    if (resultado && Number.isFinite(resultado.valorSugerido)) {
+      metaList.appendChild(createClientFieldItem('Valor sugerido', formatFasecoldaCurrency(resultado.valorSugerido)));
+    } else if (resultado && resultado.valorSugerido === null && resultado.observaciones) {
+      metaList.appendChild(createClientFieldItem('Valor sugerido', resultado.observaciones));
+    }
+
+    if (resultado && typeof resultado.totalCoincidencias === 'number') {
+      metaList.appendChild(createClientFieldItem('Coincidencias encontradas', resultado.totalCoincidencias));
+    }
+
+    const updatedAt = resultado && resultado.actualizado ? resultado.actualizado : fasecoldaData.actualizado;
+    const formattedTimestamp = formatFasecoldaTimestamp(updatedAt);
+    if (formattedTimestamp) {
+      metaList.appendChild(createClientFieldItem('Actualización', formattedTimestamp));
+    }
+
+    if (seriesItem && seriesItem.error) {
+      metaList.appendChild(createClientFieldItem('Estado', `Error: ${seriesItem.error}`));
+    } else if (resultado && resultado.observaciones) {
+      metaList.appendChild(createClientFieldItem('Observaciones', resultado.observaciones));
+    }
+
+    sectionEl.appendChild(metaList);
+
+    const coincidencias = Array.isArray(resultado && resultado.coincidencias) ? resultado.coincidencias : [];
+
+    if (seriesItem && seriesItem.error) {
+      const valuesList = document.createElement('div');
+      valuesList.className = 'client-section__list client-section__list--fasecolda-values';
+      valuesList.appendChild(createClientFieldItem('2000-2026', 'No se pudo consultar valores para esta serie.'));
+      sectionEl.appendChild(valuesList);
+    } else if (!coincidencias.length) {
+      const valuesList = document.createElement('div');
+      valuesList.className = 'client-section__list client-section__list--fasecolda-values';
+      const emptyMessage = resultado && resultado.observaciones
+        ? resultado.observaciones
+        : 'Sin coincidencias disponibles en Fasecolda.';
+      appendFasecoldaYearSelector(valuesList, [], {
+        rangeLabel: '2000-2026',
+        emptyMessage
+      });
+      sectionEl.appendChild(valuesList);
+    } else {
+      coincidencias.forEach((coincidencia, idx) => {
+        const valuesList = document.createElement('div');
+        valuesList.className = 'client-section__list client-section__list--fasecolda-values';
+
+        const referenceLabel = formatGenericValue(coincidencia && coincidencia.referencia)
+          || `Referencia ${idx + 1}`;
+        valuesList.appendChild(createClientFieldItem('Referencia', referenceLabel));
+
+        const { sortedValues } = buildFasecoldaYearOptions(coincidencia && coincidencia.valores);
+        const rangeLabel = sortedValues.length
+          ? `${sortedValues[0].year}-${sortedValues[sortedValues.length - 1].year}`
+          : '2000-2026';
+
+        appendFasecoldaYearSelector(valuesList, sortedValues, {
+          preferredYear: consultaYear,
+          rangeLabel,
+          emptyMessage: 'Sin valores disponibles en el rango consultado.'
+        });
+
+        sectionEl.appendChild(valuesList);
+      });
+    }
+
+    clientMedia.appendChild(sectionEl);
+  });
+
+  const unmatchedSelections = selectionOrder.filter(selection => {
+    const normalizedSelection = normalizeFasecoldaKey(selection);
+    return normalizedSelection && !coveredSelections.has(normalizedSelection);
+  });
+
+  if (unmatchedSelections.length) {
+    renderSelectionFallbackSections(clientMedia, unmatchedSelections, {
+      titleText: unmatchedSelections.length > 1
+        ? '🚘 Selecciones sin valoración'
+        : '🚘 Selección sin valoración',
+      description: 'Sin coincidencias disponibles en Fasecolda.'
+    });
+  }
+
+  if (requestId === mediaRenderId) {
+    clientMedia.classList.remove('hidden');
+  }
+
+  return true;
+}
+
+function renderSelectionFallbackSections(container, selections, options = {}) {
+  if (!container || !Array.isArray(selections) || !selections.length) {
+    return;
+  }
+
+  const { titleText, description, clear = false } = options;
+
+  if (clear) {
+    container.innerHTML = '';
+  }
+
+  const heading = document.createElement('h3');
+  heading.className = 'client-section__title';
+  heading.textContent = titleText || '🚘 Selección del formulario';
+  container.appendChild(heading);
+
+  selections.forEach(selection => {
+    const sectionEl = document.createElement('section');
+    sectionEl.className = 'client-section client-section--no-data';
+
+    const titleEl = document.createElement('h4');
+    titleEl.className = 'client-section__title';
+    titleEl.textContent = singularizeDescapotables(selection);
+    sectionEl.appendChild(titleEl);
+
+    const metaList = document.createElement('div');
+    metaList.className = 'client-section__list client-section__list--meta';
+    metaList.appendChild(
+      createClientFieldItem('Valores Fasecolda', description || 'Sin coincidencias disponibles en Fasecolda.')
+    );
+    sectionEl.appendChild(metaList);
+
+    container.appendChild(sectionEl);
+  });
+
+  container.classList.remove('hidden');
+}
+
+function extractVehicleSelectionSegments(record) {
   const fields = [
     'Serie del vehículo',
     'Serie del vehículo 2',
     'Serie del vehículo 3'
   ];
 
-  const labels = new Set();
+  const selections = [];
 
   fields.forEach(key => {
     const rawValue = record[key];
@@ -771,16 +1098,49 @@ function getVehicleReferenceLabels(record) {
       .map(value => formatGenericValue(value))
       .filter(Boolean);
 
-    segments.forEach(value => {
-      expandCatalogLabel(value).forEach(variant => {
-        if (isMeaningfulFasecoldaLabel(variant)) {
-          labels.add(variant);
-        }
-      });
-    });
+    segments.forEach(value => selections.push(value));
   });
 
-  return Array.from(labels);
+  return selections;
+}
+
+function extractPreferredYear(record) {
+  if (!record) {
+    return null;
+  }
+  const rawValue = record['Año modelo del vehículo'] || record['Ano modelo del vehiculo'] || record['anioModelo'];
+  if (!rawValue) {
+    return null;
+  }
+  const match = String(rawValue).match(/(19|20)\d{2}/);
+  if (!match) {
+    return null;
+  }
+  const year = Number.parseInt(match[0], 10);
+  return Number.isFinite(year) ? year : null;
+}
+
+function getVehicleReferenceLabels(record) {
+  const selections = extractVehicleSelectionSegments(record);
+  const results = [];
+
+  selections.forEach(selection => {
+    const variantsSet = new Set();
+    expandCatalogLabel(selection).forEach(variant => {
+      if (isMeaningfulFasecoldaLabel(variant)) {
+        variantsSet.add(formatGenericValue(variant));
+      }
+    });
+
+    if (variantsSet.size) {
+      results.push({
+        selection,
+        variants: Array.from(variantsSet)
+      });
+    }
+  });
+
+  return results;
 }
 
 function expandCatalogLabel(value) {
@@ -808,49 +1168,71 @@ function expandCatalogLabel(value) {
 }
 
 async function loadFasecoldaDataset() {
-  try {
-    const response = await fetch(FASECOLDA_DATASET_PATH, { cache: 'no-cache' });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const dataset = await response.json();
+  const index = new Map();
+  const entries = [];
 
-    const index = new Map();
-    const entries = [];
+  for (const group of FASECOLDA_DATASET_PATHS) {
+    const variants = Array.isArray(group) ? group : [group];
 
-    dataset.forEach(serie => {
-      const serieName = formatGenericValue(serie && serie.serie);
-      const categoria = formatGenericValue(serie && serie.categoria);
-
-      const referencias = Array.isArray(serie && serie.referencias) ? serie.referencias : [];
-      referencias.forEach(ref => {
-        const referenciaLabel = formatGenericValue(ref && ref.referencia);
-        const key = normalizeFasecoldaKey(referenciaLabel);
-        if (!key || index.has(key)) {
-          return;
+    for (const candidate of variants) {
+      const trimmedPath = typeof candidate === 'string' ? candidate.trim() : '';
+      if (!trimmedPath) {
+        continue;
+      }
+      try {
+        const response = await fetch(trimmedPath, { cache: 'no-cache' });
+        if (!response.ok) {
+          console.warn(`No se pudo cargar ${trimmedPath}: HTTP ${response.status}`);
+          continue;
         }
-        const valores = (ref && ref.valores) || {};
-        const entry = {
-          key,
-          referencia: referenciaLabel,
-          serie: serieName,
-          categoria,
-          tipologia: singularizeDescapotables(formatGenericValue(ref && ref.tipologia)),
-          clase: formatGenericValue(ref && ref.clase),
-          codigo: formatGenericValue(ref && ref.codigo),
-          valores,
-          tokens: buildFasecoldaTokensSet(referenciaLabel)
-        };
-        index.set(key, entry);
-        entries.push(entry);
-      });
-    });
-
-    return { map: index, entries };
-  } catch (error) {
-    console.warn('No se pudieron cargar los valores de Fasecolda.', error);
-    return { map: new Map(), entries: [] };
+        const dataset = await response.json();
+        ingestFasecoldaDataset(dataset, index, entries);
+        break;
+      } catch (error) {
+        console.warn(`Error al cargar valores de Fasecolda desde ${trimmedPath}.`, error);
+      }
+    }
   }
+
+  if (!entries.length) {
+    console.warn('No se pudieron cargar los valores de Fasecolda. Verifica las rutas configuradas.');
+  }
+
+  return { map: index, entries };
+}
+
+function ingestFasecoldaDataset(dataset, index, entries) {
+  if (!Array.isArray(dataset)) {
+    return;
+  }
+
+  dataset.forEach(serie => {
+    const serieName = formatGenericValue(serie && serie.serie);
+    const categoria = formatGenericValue(serie && serie.categoria);
+
+    const referencias = Array.isArray(serie && serie.referencias) ? serie.referencias : [];
+    referencias.forEach(ref => {
+      const referenciaLabel = formatGenericValue(ref && ref.referencia);
+      const key = normalizeFasecoldaKey(referenciaLabel);
+      if (!key || index.has(key)) {
+        return;
+      }
+      const valores = (ref && ref.valores) || {};
+      const entry = {
+        key,
+        referencia: referenciaLabel,
+        serie: serieName,
+        categoria,
+        tipologia: singularizeDescapotables(formatGenericValue(ref && ref.tipologia)),
+        clase: formatGenericValue(ref && ref.clase),
+        codigo: formatGenericValue(ref && ref.codigo),
+        valores,
+        tokens: buildFasecoldaTokensSet(referenciaLabel)
+      };
+      index.set(key, entry);
+      entries.push(entry);
+    });
+  });
 }
 
 function normalizeFasecoldaKey(value) {
@@ -868,7 +1250,7 @@ function findFasecoldaByTokens(label, entries, limit) {
   }
 
   const tokensSet = new Set(buildFasecoldaTokens(label));
-  tokensSet.delete('BMW');
+  FASECOLDA_BRANDS.forEach(brand => tokensSet.delete(brand));
   const tokens = tokensSet.size ? Array.from(tokensSet) : buildFasecoldaTokens(label);
 
   if (!tokens.length) {
@@ -928,13 +1310,126 @@ function buildFasecoldaYearOptions(values) {
   return { sortedValues, hasValues: sortedValues.length > 0 };
 }
 
+function appendFasecoldaYearSelector(container, sortedValues, options = {}) {
+  if (!container) {
+    return;
+  }
+
+  const { emptyMessage, rangeLabel, preferredYear } = options;
+  const hasValues = Array.isArray(sortedValues) && sortedValues.length > 0;
+
+  if (!hasValues) {
+    const label = rangeLabel || 'Rango consultado';
+    container.appendChild(
+      createClientFieldItem(label, emptyMessage || 'Sin valores disponibles en el rango consultado.')
+    );
+    return;
+  }
+
+  const firstYear = sortedValues[0].year;
+  const lastYear = sortedValues[sortedValues.length - 1].year;
+  const computedRange = rangeLabel || (firstYear === lastYear ? String(firstYear) : `${firstYear}-${lastYear}`);
+
+  const selectItem = document.createElement('div');
+  selectItem.className = 'client-section__item';
+
+  const selectLabel = document.createElement('span');
+  selectLabel.className = 'client-section__label';
+  selectLabel.textContent = computedRange ? `Año (${computedRange})` : 'Año';
+  selectItem.appendChild(selectLabel);
+
+  const select = document.createElement('select');
+  select.className = 'client-select';
+
+  sortedValues.forEach(({ year, value }) => {
+    const option = document.createElement('option');
+    option.value = String(year);
+    option.textContent = String(year);
+    option.dataset.valor = value;
+    select.appendChild(option);
+  });
+
+  selectItem.appendChild(select);
+  container.appendChild(selectItem);
+
+  const valueItem = document.createElement('div');
+  valueItem.className = 'client-section__item';
+
+  const valueLabel = document.createElement('span');
+  valueLabel.className = 'client-section__label';
+  valueLabel.textContent = 'Valor sugerido';
+  valueItem.appendChild(valueLabel);
+
+  const valueDisplay = document.createElement('span');
+  valueDisplay.className = 'client-section__value';
+  valueDisplay.textContent = 'Sin información';
+  valueItem.appendChild(valueDisplay);
+
+  const updateDisplay = () => {
+    const selectedOption = select.options[select.selectedIndex];
+    const rawValue = selectedOption ? Number(selectedOption.dataset.valor) : NaN;
+    valueDisplay.textContent = formatFasecoldaCurrency(rawValue) || 'Sin información';
+  };
+
+  select.addEventListener('change', updateDisplay);
+
+  let defaultIndex = select.options.length ? select.options.length - 1 : 0;
+  if (Number.isFinite(preferredYear)) {
+    const foundIndex = sortedValues.findIndex(({ year }) => Number(year) === Number(preferredYear));
+    if (foundIndex >= 0) {
+      defaultIndex = foundIndex;
+    }
+  }
+
+  if (select.options.length) {
+    select.selectedIndex = defaultIndex;
+  }
+  updateDisplay();
+
+  container.appendChild(valueItem);
+}
+
+function getFasecoldaEntryId(entry) {
+  if (!entry) {
+    return '';
+  }
+  if (entry.codigo) {
+    return entry.codigo;
+  }
+  if (entry.key) {
+    return entry.key;
+  }
+  return normalizeFasecoldaKey(entry.referencia || '');
+}
+
+function detectFasecoldaBrand(label) {
+  const sanitized = stripDiacritics(formatGenericValue(label)).toUpperCase();
+  if (!sanitized) {
+    return '';
+  }
+  return FASECOLDA_BRANDS.find(brand => sanitized.includes(brand)) || '';
+}
+
+function referenceStartsWithBrand(entry, brand) {
+  if (!brand || !entry) {
+    return true;
+  }
+  const reference = stripDiacritics(formatGenericValue(entry.referencia)).toUpperCase();
+  return reference.startsWith(brand);
+}
+
 function buildFasecoldaReferencePrefixes(label) {
   const variants = expandCatalogLabel(label);
   const prefixes = new Set();
 
   variants.forEach(variant => {
     const sanitized = stripDiacritics(formatGenericValue(variant)).toUpperCase();
-    if (!sanitized.includes('BMW')) {
+    if (!sanitized) {
+      return;
+    }
+
+    const brand = FASECOLDA_BRANDS.find(candidate => sanitized.includes(candidate));
+    if (!brand) {
       return;
     }
 
@@ -943,9 +1438,9 @@ function buildFasecoldaReferencePrefixes(label) {
       .split(/\s+/)
       .filter(Boolean);
 
-    let brandIndex = tokens.indexOf('BMW');
+    let brandIndex = tokens.indexOf(brand);
     if (brandIndex === -1) {
-      tokens.unshift('BMW');
+      tokens.unshift(brand);
       brandIndex = 0;
     }
 
@@ -953,6 +1448,12 @@ function buildFasecoldaReferencePrefixes(label) {
     for (let i = brandIndex + 1; i < tokens.length; i++) {
       const token = tokens[i];
       if (!token) {
+        continue;
+      }
+      if (token === brand) {
+        continue;
+      }
+      if (token === 'MOTORRAD' && brand === 'BMW') {
         continue;
       }
       if (FASECOLDA_SKIP_TOKENS.has(token)) {
@@ -963,12 +1464,15 @@ function buildFasecoldaReferencePrefixes(label) {
           continue;
         }
         const nextToken = findNextPrefixToken(tokens, i + 1);
-        if (!nextToken || !/[0-9]/.test(nextToken)) {
+        if (!nextToken || !/^[0-9A-Z]+$/.test(nextToken)) {
           continue;
         }
       }
       if (shouldStopPrefixToken(token, coreTokens.length)) {
         break;
+      }
+      if (coreTokens.length && coreTokens[coreTokens.length - 1] === token) {
+        continue;
       }
       coreTokens.push(token);
       if (coreTokens.length >= 3) {
@@ -982,7 +1486,7 @@ function buildFasecoldaReferencePrefixes(label) {
 
     const minPrefixLength = coreTokens[0] && coreTokens[0].length === 1 ? 2 : 1;
     for (let length = coreTokens.length; length >= minPrefixLength; length--) {
-      const prefix = ['BMW', ...coreTokens.slice(0, length)].join(' ');
+      const prefix = [brand, ...coreTokens.slice(0, length)].join(' ');
       prefixes.add(prefix);
     }
   });
@@ -994,8 +1498,14 @@ function entryMatchesPrefixes(entry, prefixes) {
   if (!prefixes || !prefixes.length) {
     return true;
   }
-  const reference = stripDiacritics(formatGenericValue(entry && entry.referencia)).toUpperCase();
-  return prefixes.some(prefix => reference.startsWith(prefix));
+  const normalizedReference = normalizeFasecoldaKey(entry && entry.referencia);
+  if (!normalizedReference) {
+    return false;
+  }
+  return prefixes.some(prefix => {
+    const normalizedPrefix = normalizeFasecoldaKey(prefix);
+    return normalizedPrefix && normalizedReference.startsWith(normalizedPrefix);
+  });
 }
 
 function shouldStopPrefixToken(token, currentLength) {
@@ -1012,6 +1522,9 @@ function findNextPrefixToken(tokens, startIndex) {
   for (let index = startIndex; index < tokens.length; index++) {
     const candidate = tokens[index];
     if (!candidate) {
+      continue;
+    }
+    if (FASECOLDA_BRANDS.includes(candidate)) {
       continue;
     }
     if (FASECOLDA_SKIP_TOKENS.has(candidate)) {
@@ -1073,6 +1586,24 @@ function formatFasecoldaCurrency(value) {
     currency: 'COP',
     maximumFractionDigits: 0
   }).format(pesos);
+}
+
+function formatFasecoldaTimestamp(value) {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toLocaleString('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
 }
 
 function createClientFieldItem(label, value) {
