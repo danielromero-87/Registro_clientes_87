@@ -2,10 +2,11 @@
  * script.js
  * Permite buscar clientes usando un backend REST o, en su defecto, el WebApp JSONP de Google Apps Script.
  */
-const { BASE_URL, API_KEY } = window.APP_CONFIG;
+const { BASE_URL, API_KEY } = window.APP_CONFIG || {};
 const CONFIG = window.APP_CONFIG || {};
-const SERVER_API_URL = (CONFIG.serverApiUrl || BASE_URL || '').trim();
-const WEBAPP_URL = (CONFIG.webAppUrl || '').trim();
+const CLIENTES_ENDPOINT_PATH = '/api/v1/clientes';
+const SERVER_API_URL = resolveServerApiEndpoint();
+const WEBAPP_URL = (CONFIG.webAppUrl || CONFIG.WEBAPP_URL || '').trim();
 
 const HEADERS = [
   'Timestamp',
@@ -168,6 +169,29 @@ const DESCAPOTABLES_PATTERN = /\bDESCAPOTABLES\b/gi;
 const fasecoldaIndexPromise = loadFasecoldaDataset();
 let mediaRenderId = 0;
 
+function resolveServerApiEndpoint() {
+  const explicitUrl = (CONFIG.serverApiUrl || CONFIG.SERVER_API_URL || '').trim();
+  if (explicitUrl) {
+    return explicitUrl;
+  }
+
+  const baseValue = (BASE_URL || '').trim();
+  if (!baseValue) {
+    return CLIENTES_ENDPOINT_PATH;
+  }
+
+  try {
+    const baseUrl = new URL(baseValue, resolveBaseUrl());
+    return new URL(CLIENTES_ENDPOINT_PATH, baseUrl).toString();
+  } catch (_error) {
+    const sanitizedBase = baseValue.replace(/\/+$/, '');
+    const sanitizedPath = CLIENTES_ENDPOINT_PATH.startsWith('/')
+      ? CLIENTES_ENDPOINT_PATH
+      : `/${CLIENTES_ENDPOINT_PATH}`;
+    return `${sanitizedBase}${sanitizedPath}`;
+  }
+}
+
 const serverApiDetails = tryParseUrl(SERVER_API_URL);
 const webAppDetails = tryParseUrl(WEBAPP_URL);
 const serverApiIsAppsScript = Boolean(serverApiDetails && isGoogleAppsScriptHost(serverApiDetails.hostname));
@@ -278,7 +302,7 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
     }
 
     if (!canUseServerApi && !hasJsonpEndpoint) {
-      showFeedback('❌ Configura APP_CONFIG.serverApiUrl antes de buscar.', 'error');
+      showFeedback('❌ Configura APP_CONFIG.BASE_URL antes de buscar.', 'error');
       return;
     }
 
@@ -318,7 +342,7 @@ if (followupForm && followupObservacionInput && followupSubmit) {
     }
 
     if (!SERVER_API_URL) {
-      showFollowupFeedback('❌ Configura APP_CONFIG.serverApiUrl para enviar observaciones.', 'error');
+      showFollowupFeedback('❌ Configura APP_CONFIG.BASE_URL para enviar observaciones.', 'error');
       return;
     }
 
@@ -450,7 +474,7 @@ async function fetchClienteRest(telefono) {
 
 function buildServerApiUrl(telefono) {
   if (!SERVER_API_URL) {
-    throw new Error('SERVER_API_URL no está configurada.');
+    throw new Error('No se encontró la ruta del backend.');
   }
 
   try {
@@ -572,7 +596,7 @@ function fetchClienteJsonp(telefono) {
 
 async function sendFollowupObservation(telefono, observacion) {
   if (!SERVER_API_URL) {
-    throw new Error('APP_CONFIG.serverApiUrl no está configurada.');
+    throw new Error('La URL base del backend no está configurada.');
   }
 
   const payload = {

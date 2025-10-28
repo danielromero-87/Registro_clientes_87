@@ -210,10 +210,11 @@
   </div>
 
   <script src="app-config.js"></script>
+  <script src="script.js"></script>
   <script>
-    const { serverApiUrl = '', apiKey = '' } = window.APP_CONFIG || {};
-    const backendUrl = serverApiUrl.trim();
-    const backendApiKey = apiKey.trim();
+    const { BASE_URL = '', API_KEY = '' } = window.APP_CONFIG || {};
+    const backendUrl = buildBackendUrl(BASE_URL);
+    const backendApiKey = API_KEY.trim();
     const form = document.getElementById('registroForm');
     const submitButton = document.getElementById('submit-button');
     const successModal = document.getElementById('success-modal');
@@ -1264,9 +1265,26 @@
             .finally(() => {
                 submitButton.disabled = false;
                 submitButton.textContent = 'Enviar registro';
-            });
         });
-    </script>
+    });
+
+    function buildBackendUrl(baseValue) {
+      const endpointPath = '/api/v1/clientes';
+      const trimmedBase = (baseValue || '').trim();
+
+      if (!trimmedBase) {
+        return endpointPath;
+      }
+
+      try {
+        const baseUrl = new URL(trimmedBase, window.location.origin);
+        return new URL(endpointPath, baseUrl).toString();
+      } catch (_error) {
+        const sanitizedBase = trimmedBase.replace(/\/+$/, '');
+        return `${sanitizedBase}${endpointPath}`;
+      }
+    }
+  </script>
 
 </body>
 </html>
