@@ -22,9 +22,9 @@
             <h1 class="card-title">Registro de Oportunidad</h1>
             <p class="card-subtitle">Completa la información de la visita para que el equipo haga seguimiento oportuno.</p>
           </div>
-          <button type="button" class="button button--outline button--icon" id="open-search">
+          <a class="button button--outline button--icon" id="open-search" href="consulta-clientes.html">
             🔍 Buscar Cliente
-          </button>
+          </a>
         </div>
 
         <div class="form-group">
@@ -212,9 +212,10 @@
   <script src="app-config.js"></script>
   <script src="script.js"></script>
   <script>
-    const { BASE_URL = '', API_KEY = '' } = window.APP_CONFIG || {};
-    const backendUrl = buildBackendUrl(BASE_URL);
-    const backendApiKey = API_KEY.trim();
+  {
+    const computedServerUrl = typeof SERVER_API_URL === 'string' ? SERVER_API_URL.trim() : '';
+    const backendUrl = computedServerUrl || (typeof CLIENTES_ENDPOINT_PATH === 'string' ? CLIENTES_ENDPOINT_PATH : '/api/v1/clientes');
+    const backendApiKey = (typeof API_KEY === 'string' ? API_KEY : '').trim();
     const form = document.getElementById('registroForm');
     const submitButton = document.getElementById('submit-button');
     const successModal = document.getElementById('success-modal');
@@ -1265,25 +1266,9 @@
             .finally(() => {
                 submitButton.disabled = false;
                 submitButton.textContent = 'Enviar registro';
+            });
         });
-    });
-
-    function buildBackendUrl(baseValue) {
-      const endpointPath = '/api/v1/clientes';
-      const trimmedBase = (baseValue || '').trim();
-
-      if (!trimmedBase) {
-        return endpointPath;
-      }
-
-      try {
-        const baseUrl = new URL(trimmedBase, window.location.origin);
-        return new URL(endpointPath, baseUrl).toString();
-      } catch (_error) {
-        const sanitizedBase = trimmedBase.replace(/\/+$/, '');
-        return `${sanitizedBase}${endpointPath}`;
-      }
-    }
+  }
   </script>
 
 </body>

@@ -8,6 +8,11 @@ const CLIENTES_ENDPOINT_PATH = '/api/v1/clientes';
 const SERVER_API_URL = resolveServerApiEndpoint();
 const WEBAPP_URL = (CONFIG.webAppUrl || CONFIG.WEBAPP_URL || '').trim();
 
+// Exponer configuraciones clave para scripts inyectados que no comparten el mismo ámbito léxico.
+window.CLIENTES_ENDPOINT_PATH = CLIENTES_ENDPOINT_PATH;
+window.SERVER_API_URL = SERVER_API_URL;
+window.API_KEY = API_KEY;
+
 const HEADERS = [
   'Timestamp',
   'Fecha y Hora',
@@ -319,8 +324,6 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
       hideFollowupSection();
     });
   }
-} else {
-  console.error('No se pudieron inicializar los elementos requeridos de la interfaz.');
 }
 
 if (followupForm && followupObservacionInput && followupSubmit) {
