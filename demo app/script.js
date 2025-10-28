@@ -2,10 +2,10 @@
  * script.js
  * Permite buscar clientes usando un backend REST o, en su defecto, el WebApp JSONP de Google Apps Script.
  */
+const { BASE_URL, API_KEY } = window.APP_CONFIG;
 const CONFIG = window.APP_CONFIG || {};
-const SERVER_API_URL = (CONFIG.serverApiUrl || '').trim();
+const SERVER_API_URL = (CONFIG.serverApiUrl || BASE_URL || '').trim();
 const WEBAPP_URL = (CONFIG.webAppUrl || '').trim();
-const API_KEY = (CONFIG.apiKey || '11de127f05b70269ddc7ecafce44a83772b18be6a9ae3f0a9d9cd42cae9db368').trim();
 
 const HEADERS = [
   'Timestamp',
