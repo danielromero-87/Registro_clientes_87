@@ -5,6 +5,8 @@ const API_KEY = 'c591836278a4cb59f5b92a4aee61827662abc5b3060753e1fce08c503a1ace7
 
 window.APP_CONFIG = Object.assign(
   {
+    BASE_URL,
+    API_KEY,
     serverApiUrl: BASE_URL,
     webAppUrl: 'https://script.google.com/macros/s/AKfycbwci1hkECHbSqYnISV9LEcmNL2wtvm-K7QrAaMJb-1BpPxnV4bBUGpZCWUt27HnNMoFsw/exec',
     apiKey: API_KEY,
