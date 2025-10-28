@@ -211,8 +211,9 @@
 
   <script src="app-config.js"></script>
   <script>
-    const { webAppUrl = '' } = window.APP_CONFIG || {};
-    const scriptURL = webAppUrl.trim();
+    const { serverApiUrl = '', apiKey = '' } = window.APP_CONFIG || {};
+    const backendUrl = serverApiUrl.trim();
+    const backendApiKey = apiKey.trim();
     const form = document.getElementById('registroForm');
     const submitButton = document.getElementById('submit-button');
     const successModal = document.getElementById('success-modal');
@@ -1227,15 +1228,29 @@
             const data = {};
             formData.forEach((value, key) => data[key] = value);
 
-            fetch(scriptURL, { 
-                method: 'POST', 
-                mode: 'no-cors', // <-- El cambio clave está aquí
+            fetch(backendUrl, {
+                method: 'POST',
+                mode: 'cors',
                 headers: {
-                    'Content-Type': 'text/plain;charset=utf-8',
+                    'Content-Type': 'application/json',
+                    'api-key': backendApiKey
                 },
                 body: JSON.stringify(data)
             })
-            .then(() => {
+            .then(async response => {
+                let responseBody = null;
+                try {
+                    responseBody = await response.json();
+                } catch (jsonError) {
+                    console.warn('No fue posible parsear el JSON del backend.', jsonError);
+                }
+                console.log('POST /clientes → status:', response.status, 'payload:', responseBody);
+
+                if (!response.ok) {
+                    const message = (responseBody && (responseBody.detail || responseBody.message)) || 'Error al registrar el cliente.';
+                    throw new Error(message);
+                }
+
                 form.reset();
                 selectedVehicles = [];
                 renderSelectedVehicles();

@@ -5,6 +5,7 @@
 const CONFIG = window.APP_CONFIG || {};
 const SERVER_API_URL = (CONFIG.serverApiUrl || '').trim();
 const WEBAPP_URL = (CONFIG.webAppUrl || '').trim();
+const API_KEY = (CONFIG.apiKey || '11de127f05b70269ddc7ecafce44a83772b18be6a9ae3f0a9d9cd42cae9db368').trim();
 
 const HEADERS = [
   'Timestamp',
@@ -277,7 +278,7 @@ if (form && telefonoInput && searchButton && feedback && clientCard && clientDet
     }
 
     if (!canUseServerApi && !hasJsonpEndpoint) {
-      showFeedback('❌ Configura APP_CONFIG.webAppUrl o APP_CONFIG.serverApiUrl antes de buscar.', 'error');
+      showFeedback('❌ Configura APP_CONFIG.serverApiUrl antes de buscar.', 'error');
       return;
     }
 
@@ -316,8 +317,8 @@ if (followupForm && followupObservacionInput && followupSubmit) {
       return;
     }
 
-    if (!WEBAPP_URL) {
-      showFollowupFeedback('❌ Configura APP_CONFIG.webAppUrl para enviar observaciones.', 'error');
+    if (!SERVER_API_URL) {
+      showFollowupFeedback('❌ Configura APP_CONFIG.serverApiUrl para enviar observaciones.', 'error');
       return;
     }
 
@@ -404,21 +405,39 @@ async function fetchCliente(telefono) {
 async function fetchClienteRest(telefono) {
   const url = buildServerApiUrl(telefono);
 
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'api-key': API_KEY,
+    api_key: 'c591836278a4cb59f5b92a4aee61827662abc5b3060753e1fce08c503a1ace7b'
+  };
+  console.log('[API] Enviando petición con headers:', headers);
+
   const response = await fetch(url, {
     method: 'GET',
     mode: 'cors',
     credentials: 'omit',
-    headers: {
-      Accept: 'application/json'
-    }
+    headers
   });
 
-  const body = await safeParseJson(response);
+  let body;
+  try {
+    body = await response.clone().json();
+  } catch (_error) {
+    body = undefined;
+  }
+  console.log('[API] Respuesta:', response.status, body);
+
+  if (body === undefined) {
+    body = await safeParseJson(response);
+  }
 
   if (!response.ok) {
-    const message = (body && body.error) ? body.error : `Error ${response.status}`;
+    const message = (body && (body.detail || body.error || body.message)) ? (body.detail || body.error || body.message) : `Error ${response.status}`;
     throw new Error(message);
   }
+
+  console.log('[Consulta Backend]', body);
 
   const record = extractRecordOrThrow(body);
 
@@ -437,7 +456,9 @@ function buildServerApiUrl(telefono) {
   try {
     const base = resolveBaseUrl();
     const url = new URL(SERVER_API_URL, base);
-    url.searchParams.set('telefono', telefono);
+    if (telefono) {
+      url.searchParams.set('telefono', telefono);
+    }
     return url.toString();
   } catch (_error) {
     throw new Error('SERVER_API_URL no es una URL válida.');
@@ -549,56 +570,50 @@ function fetchClienteJsonp(telefono) {
   });
 }
 
-function sendFollowupObservation(telefono, observacion) {
-  if (!WEBAPP_URL) {
-    return Promise.reject(new Error('WEBAPP_URL no está configurada.'));
+async function sendFollowupObservation(telefono, observacion) {
+  if (!SERVER_API_URL) {
+    throw new Error('APP_CONFIG.serverApiUrl no está configurada.');
   }
 
-  return new Promise((resolve, reject) => {
-    const callbackName = `observacionCallback_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const params = new URLSearchParams({
-      action: 'observaciones2',
-      telefono,
-      clienteTelefono: telefono,
-      observaciones2: observacion,
-      callback: callbackName
-    });
+  const payload = {
+    action: 'observaciones2',
+    telefono,
+    clienteTelefono: telefono,
+    observaciones2: observacion
+  };
 
-    const script = document.createElement('script');
-    script.src = `${WEBAPP_URL}?${params.toString()}`;
-    script.async = true;
+  const headers = {
+    'Content-Type': 'application/json',
+    'api-key': API_KEY
+  };
+  console.log('[API] Enviando petición con headers:', headers);
 
-    let timeoutId;
-
-    const cleanup = () => {
-      window.clearTimeout(timeoutId);
-      delete window[callbackName];
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-
-    timeoutId = window.setTimeout(() => {
-      cleanup();
-      reject(new Error('Tiempo de espera agotado al registrar observación.'));
-    }, 10000);
-
-    window[callbackName] = payload => {
-      cleanup();
-      try {
-        resolve(payload);
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    script.onerror = () => {
-      cleanup();
-      reject(new Error('No se pudo enviar la observación (error de red).'));
-    };
-
-    document.body.appendChild(script);
+  const response = await fetch(SERVER_API_URL, {
+    method: 'POST',
+    mode: 'cors',
+    credentials: 'omit',
+    headers,
+    body: JSON.stringify(payload)
   });
+
+  let body;
+  try {
+    body = await response.clone().json();
+  } catch (_error) {
+    body = undefined;
+  }
+  console.log('[API] Respuesta:', response.status, body);
+
+  if (body === undefined) {
+    body = await safeParseJson(response);
+  }
+
+  if (!response.ok) {
+    const message = (body && (body.detail || body.error || body.message)) ? (body.detail || body.error || body.message) : `Error ${response.status}`;
+    throw new Error(message);
+  }
+
+  return body;
 }
 
 function extractRecordOrThrow(payload) {
