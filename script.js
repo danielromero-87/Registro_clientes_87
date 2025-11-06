@@ -278,6 +278,7 @@ const clientDetails = document.getElementById('clientDetails');
 const clientMedia = document.getElementById('clientMedia');
 const newSearchButton = document.getElementById('newSearchButton');
 const clientFollowup = document.getElementById('clientFollowup');
+const followupNextStepSelect = document.getElementById('followupNextStep');
 const followupForm = document.getElementById('followupForm');
 const followupTelefonoInput = document.getElementById('followupTelefono');
 const followupObservacionInput = document.getElementById('followupObservacion');
@@ -337,6 +338,15 @@ if (followupForm && followupObservacionInput && followupSubmit) {
       return;
     }
 
+    const nextStepValue = followupNextStepSelect ? String(followupNextStepSelect.value || '').trim() : '';
+    if (!nextStepValue) {
+      showFollowupFeedback('❌ Selecciona el siguiente paso antes de guardar.', 'error');
+      if (followupNextStepSelect) {
+        followupNextStepSelect.focus();
+      }
+      return;
+    }
+
     const nota = formatGenericValue(followupObservacionInput.value);
     if (!nota) {
       showFollowupFeedback('❌ Escribe la observación antes de enviarla.', 'error');
@@ -352,16 +362,17 @@ if (followupForm && followupObservacionInput && followupSubmit) {
     setFollowupLoading(true);
 
     try {
+      await sendNextStepUpdate(telefono, nextStepValue);
       const responseBody = await sendFollowupObservation(telefono, nota);
       const updatedRecord = extractRecordOrThrow(responseBody);
       lastClientRecord = updatedRecord;
       lastClientTelefono = telefono;
       renderClientDetails(lastClientRecord, lastFasecoldaData);
-      showFollowupFeedback('✅ Observación registrada correctamente.', 'success');
+      showFollowupFeedback('✅ Siguiente paso y observación guardados.', 'success');
       followupObservacionInput.value = '';
       showFollowupSection();
     } catch (error) {
-      const message = error && error.message ? error.message : 'No se pudo registrar la observación.';
+      const message = error && error.message ? error.message : 'No se pudo actualizar el seguimiento.';
       showFollowupFeedback(`❌ ${message}`, 'error');
       console.error(error);
     } finally {
@@ -595,6 +606,52 @@ function fetchClienteJsonp(telefono) {
 
     document.body.appendChild(script);
   });
+}
+
+async function sendNextStepUpdate(telefono, nextStepValue) {
+  if (!SERVER_API_URL) {
+    throw new Error('La URL base del backend no está configurada.');
+  }
+
+  const payload = {
+    action: 'siguientepaso',
+    telefono,
+    clienteTelefono: telefono,
+    siguientePaso: nextStepValue
+  };
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'api-key': API_KEY
+  };
+  console.log('[API] Actualizando “Siguiente paso” con headers:', headers);
+
+  const response = await fetch(SERVER_API_URL, {
+    method: 'POST',
+    mode: 'cors',
+    credentials: 'omit',
+    headers,
+    body: JSON.stringify(payload)
+  });
+
+  let body;
+  try {
+    body = await response.clone().json();
+  } catch (_error) {
+    body = undefined;
+  }
+  console.log('[API] Respuesta actualización “Siguiente paso”:', response.status, body);
+
+  if (body === undefined) {
+    body = await safeParseJson(response);
+  }
+
+  if (!response.ok) {
+    const message = body && (body.detail || body.error || body.message) ? (body.detail || body.error || body.message) : `Error ${response.status}`;
+    throw new Error(message);
+  }
+
+  return body;
 }
 
 async function sendFollowupObservation(telefono, observacion) {
@@ -1929,6 +1986,15 @@ function showFollowupSection() {
 
   clientFollowup.classList.remove('hidden');
 
+  if (followupNextStepSelect) {
+    const resolvedValue = resolveNextStepOptionValue(lastClientRecord ? lastClientRecord['Siguiente paso'] : '');
+    if (resolvedValue) {
+      followupNextStepSelect.value = resolvedValue;
+    } else {
+      followupNextStepSelect.selectedIndex = 0;
+    }
+  }
+
   if (followupTelefonoInput) {
     followupTelefonoInput.value = lastClientTelefono;
   }
@@ -1937,6 +2003,10 @@ function showFollowupSection() {
 function hideFollowupSection() {
   if (clientFollowup) {
     clientFollowup.classList.add('hidden');
+  }
+
+  if (followupNextStepSelect) {
+    followupNextStepSelect.selectedIndex = 0;
   }
 
   if (followupForm) {
@@ -1950,6 +2020,38 @@ function hideFollowupSection() {
   }
 
   clearFollowupFeedback();
+}
+
+function resolveNextStepOptionValue(value) {
+  if (!followupNextStepSelect) {
+    return '';
+  }
+
+  const formatted = formatGenericValue(value);
+  if (!formatted) {
+    return '';
+  }
+
+  const options = Array.from(followupNextStepSelect.options || []).filter(option => option.value);
+
+  const directMatch = options.find(option => option.value === formatted);
+  if (directMatch) {
+    return directMatch.value;
+  }
+
+  const lowerValue = formatted.toLowerCase();
+  const lowerMatch = options.find(option => option.value.toLowerCase() === lowerValue);
+  if (lowerMatch) {
+    return lowerMatch.value;
+  }
+
+  const normalized = lowerValue.replace(/\s+/g, '_');
+  const normalizedMatch = options.find(option => option.value.toLowerCase() === normalized);
+  if (normalizedMatch) {
+    return normalizedMatch.value;
+  }
+
+  return '';
 }
 
 function setFollowupLoading(isLoading) {

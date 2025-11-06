@@ -50,6 +50,19 @@
           <form id="followupForm" class="form client-followup__form" novalidate>
             <input type="hidden" id="followupTelefono" name="telefono" value="">
             <div class="form-group">
+              <label for="followupNextStep" class="form-label">Siguiente paso</label>
+              <div class="select-wrapper">
+                <select id="followupNextStep" name="siguientePaso" class="form-control" required>
+                  <option value="" disabled selected>Seleccione una opción</option>
+                  <option value="interesado">Interesado</option>
+                  <option value="no_interesado">No interesado</option>
+                  <option value="seguimiento">Seguimiento</option>
+                  <option value="llamada">Llamada</option>
+                  <option value="agendamiento">Agendamiento</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
               <label for="followupObservacion" class="form-label">Nueva observación</label>
               <textarea id="followupObservacion" name="observaciones2" class="form-control" rows="4" placeholder="Ej. Cliente confirmó visita el viernes." required></textarea>
             </div>

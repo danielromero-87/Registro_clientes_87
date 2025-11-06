@@ -96,6 +96,11 @@ function doPost(e) {
       return handleObservationUpdate_(sheet, payload);
     }
 
+    if (normalizedAction === 'actualizarsiguientepaso' ||
+        normalizedAction === 'siguientepaso') {
+      return handleEstadoUpdate_(sheet, payload);
+    }
+
     const series = parseSeries_(payload.serieVehiculo);
     const telefonoRaw = toSafeString_(payload.clienteTelefono);
 
@@ -378,4 +383,28 @@ function handleObservationUpdate_(sheet, payload, callback) {
   }
 
   return buildResponse_({ success: false, error: 'Cliente no encontrado para actualizar Observaciones #2.' }, callback);
+}
+
+function handleEstadoUpdate_(sheet, payload, callback) {
+  const telefono = toSafeString_(payload.telefono || payload.clienteTelefono || '');
+  const nuevoEstado = toSafeString_(payload.siguientePaso || '');
+  if (!telefono || !nuevoEstado) {
+    return buildResponse_({ success: false, error: 'Teléfono o estado vacío.' }, callback);
+  }
+  const telefonoNormalizado = normalizeDigits_(telefono);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const phoneIndex = headers.indexOf(PHONE_HEADER);
+  const estadoIndex = headers.indexOf('Siguiente paso');
+  if (phoneIndex === -1 || estadoIndex === -1) {
+    return buildResponse_({ success: false, error: 'No existe columna de teléfono o Siguiente paso.' }, callback);
+  }
+  for (let i = 1; i < values.length; i++) {
+    const storedPhone = normalizeDigits_(values[i][phoneIndex]);
+    if (storedPhone === telefonoNormalizado) {
+      sheet.getRange(i + 1, estadoIndex + 1).setValue(nuevoEstado);
+      return buildResponse_({ success: true, message: 'Siguiente paso actualizado correctamente.' }, callback);
+    }
+  }
+  return buildResponse_({ success: false, error: 'Cliente no encontrado.' }, callback);
 }
