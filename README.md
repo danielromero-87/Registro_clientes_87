@@ -94,7 +94,7 @@ En esta actualización se realizaron las siguientes modificaciones clave:
 En esta versión se introdujeron ajustes para mejorar la captura de datos y la experiencia del usuario:
 
 - **Nuevo campo obligatorio:** Se añadió la sección "Cédula" con su respectivo input debajo de "Número telefónico".
-- **Lista de asesores ampliada:** Se incorporaron las opciones "Jorge Rodriguez" y "Juan Manuel Rodriguez" en el selector de asesores.
+- **Lista de asesores ampliada:** Se incorporaron las opciones "Jorge Rodriguez", "Juan Manuel Rodriguez" y "Juan Pablo Martinez" en el selector de asesores.
 - **Confirmación visual:** Se reemplazó el mensaje plano por un modal accesible que confirma el envío exitoso.
 - **Sincronización con Sheets:** El script ahora garantiza que la hoja incluya la columna "Cédula" antes de registrar cada envío.
 
