@@ -77,7 +77,7 @@ python3 -m http.server 8000
 
 *   Se añadió el campo **Cédula** al formulario y se reorganizaron los datos de contacto en filas independientes.
 *   Se incorporó un modal de confirmación que aparece tras cada envío exitoso y puede cerrarse con clic o tecla `Escape`.
-*   El listado de asesores incluye ahora a **Jorge Rodriguez**, **Juan Manuel Rodriguez** y **Juan Pablo Martinez**.
+*   El listado de asesores incluye ahora a **Jhon Rodriguez**, **Jorge Rodriguez**, **Juan Manuel Rodriguez** y **Juan Pablo Martinez**.
 *   El script de Google Apps Script introduce la función `ensureRegistrosHeaders` para crear/actualizar la columna "Cédula" antes de registrar datos.
 *   Se reorganiza la escritura de series de vehículo para que cada selección se guarde en columnas independientes dentro de Google Sheets.
 *   Se creó `app-config.js` para centralizar las URLs del backend y compartir la configuración entre registro y consulta.
