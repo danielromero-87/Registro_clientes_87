@@ -42,7 +42,7 @@ python3 -m http.server 8000
 ### Frontend (Navegador del Usuario)
 
 1.  **Apertura del Formulario:** El usuario abre el archivo `Registro-clientes-87.html` en su navegador.
-2.  **Relleno de Datos:** El usuario completa los campos del formulario, ahora con los campos de contacto (Nombre, Número telefónico y Cédula) en disposición vertical.
+2.  **Relleno de Datos:** El usuario completa los campos del formulario, ahora con los campos de contacto (Nombre y Número telefónico) en disposición vertical.
 3.  **Envío de Datos:** Al hacer clic en "Enviar Registro", el código JavaScript intercepta el envío.
 4.  **Construcción y Envío de la Petición:**
     *   JavaScript recopila todos los datos del formulario en un objeto.
@@ -69,15 +69,15 @@ python3 -m http.server 8000
     *   Si la hoja ya existe, alinea la fila de encabezados con `HEADERS`, añadiendo columnas faltantes como "Observaciones #2" antes de escribir los datos.
 4.  **Procesamiento de Datos:** El script extrae los datos JSON que vienen en la petición (`e.postData.contents`) y los convierte en un objeto de JavaScript.
 5.  **Escritura y seguimiento:**
-    *   Para nuevos registros, `doPost` construye `newRow` (con `clienteCedula`, las series distribuidas y `observaciones2`) y la agrega con `sheet.appendRow`.
+    *   Para nuevos registros, `doPost` construye `newRow` (con `clienteCedula` si llega en el payload, las series distribuidas y `observaciones2`) y la agrega con `sheet.appendRow`.
     *   Cuando la petición incluye `action: "observaciones2"`, `handleObservationUpdate_` ubica la fila por número telefónico, concatena la nota con un sello de tiempo en `Observaciones #2` y devuelve el registro actualizado sin crear nuevas filas.
 6.  **Liberación del Bloqueo:** Finalmente, `lock.releaseLock()` libera el bloqueo, permitiendo que otras peticiones puedan ser procesadas.
 
 ## 4. Actualizaciones Recientes
 
-*   Se añadió el campo **Cédula** al formulario y se reorganizaron los datos de contacto en filas independientes.
 *   Se incorporó un modal de confirmación que aparece tras cada envío exitoso y puede cerrarse con clic o tecla `Escape`.
-*   El listado de asesores incluye ahora a **Jhon Rodriguez**, **Jorge Rodriguez**, **Juan Manuel Rodriguez** y **Juan Pablo Martinez**.
+*   Se retiró el campo **Cédula** del formulario. El backend mantiene la columna para compatibilidad si llega desde otras fuentes.
+*   El listado de asesores se actualizó y quedó en orden alfabético; se agregó **Johan Calderon** y se removieron **Yulieth Serrano** y **Juan Esteban Rodriguez**.
 *   El script de Google Apps Script introduce la función `ensureRegistrosHeaders` para crear/actualizar la columna "Cédula" antes de registrar datos.
 *   Se reorganiza la escritura de series de vehículo para que cada selección se guarde en columnas independientes dentro de Google Sheets.
 *   Se creó `app-config.js` para centralizar las URLs del backend y compartir la configuración entre registro y consulta.
@@ -334,3 +334,20 @@ PY
   2. `buildServerApiUrl` usa la ubicación actual como base incluso bajo `file://`, evitando excepciones al abrir el HTML directamente en Chrome.
   3. Si `serverApiUrl` apunta a un backend con CORS habilitado, la ruta REST sigue siendo prioritaria; en caso contrario la experiencia permanece en modo JSONP.
 - **Verificación:** en DevTools → Network puede aparecer un intento REST bloqueado, pero la solicitud `<script ... callback=clienteCallback>` concluye en 200 y la tarjeta del cliente se renderiza sin errores `ORB`.
+
+## 11. Bitácora de cambios (2026-02-10)
+
+### 11.1 Cambios funcionales
+
+- Se actualizó el selector **Nombre Asesor** para eliminar `Yulieth Serrano` y `Juan Esteban Rodriguez`, agregar `Johan Calderon` y ordenar los nombres alfabéticamente.
+- Se retiró el campo **Cédula** del formulario de registro (`Registro-clientes-87.html`). El backend conserva la columna para compatibilidad, por lo que los nuevos registros dejan ese valor vacío.
+
+### 11.2 Hallazgos y decisiones
+
+- El push a GitHub falló inicialmente por permisos; se requirió aceptar la invitación del repositorio `danielromero-87/Registro_clientes_87` con el usuario `danielromero14`.
+- Se decidió mantener la columna "Cédula" en Apps Script y backend Node para no romper consultas históricas ni estructura de Google Sheets.
+
+### 11.3 Evidencias
+
+- Commit con actualización de asesores: `96066d0`.
+- Cambio de formulario y documentación: 10 de febrero de 2026.

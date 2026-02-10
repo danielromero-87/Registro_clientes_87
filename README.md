@@ -42,7 +42,7 @@ python3 -m http.server 8000
 ### Frontend (Navegador del Usuario)
 
 1.  **Apertura del Formulario:** El usuario abre el archivo `Registro-clientes-87.html` en su navegador.
-2.  **Relleno de Datos:** El usuario completa los campos del formulario, incluyendo la nueva sección de **Cédula** que aparece debajo de los datos de contacto.
+2.  **Relleno de Datos:** El usuario completa los campos del formulario, con los datos de contacto (Nombre y Número telefónico) en disposición vertical.
 3.  **Envío de Datos:** Al hacer clic en "Enviar Registro", el código JavaScript intercepta el envío.
 4.  **Construcción y Envío de la Petición:**
     *   JavaScript recopila todos los datos del formulario en un objeto.
@@ -59,7 +59,7 @@ python3 -m http.server 8000
     *   El script se conecta a la hoja de cálculo activa de Google Sheets.
     *   Busca una hoja llamada "Registros".
     *   Si la hoja no existe, la crea y le añade una fila de encabezados con los nombres de cada campo.
-    *   Si la hoja ya existe, asegura que los encabezados incluyan la columna **Cédula** y añade columnas faltantes si es necesario.
+    *   Si la hoja ya existe, asegura que los encabezados incluyan las columnas esperadas (incluye "Cédula" por compatibilidad histórica) y añade columnas faltantes si es necesario.
 4.  **Procesamiento de Datos:** El script extrae los datos JSON que vienen en la petición (`e.postData.contents`) y los convierte en un objeto de JavaScript.
 5.  **Escritura en la Hoja:** Los datos se ordenan en un array (`newRow`) y se añaden como una nueva fila al final de la hoja "Registros" usando `sheet.appendRow(newRow)`.
 6.  **Liberación del Bloqueo:** Finalmente, `lock.releaseLock()` libera el bloqueo, permitiendo que otras peticiones puedan ser procesadas.
@@ -266,6 +266,20 @@ Seguimiento comercial desde la consulta mediante “Observaciones #2”, sin dup
 
 3. **Backends alternos (`backend/src/server.js`, `demo app/Code.gs`):**
    * Se sincronizaron encabezados y rangos para que la API Node y el Apps Script de demo expongan la nueva columna sin ajustes manuales.
+
+### v2.4
+
+#### Resumen
+Ajustes de formulario y asesores para simplificar el registro de clientes.
+
+#### Detalles Técnicos
+
+1. **Formulario (`Registro-clientes-87.html`):**
+   * Se retiró el campo **Cédula** del formulario de registro.
+2. **Selector de asesores:**
+   * Se agregó `Johan Calderon`, se retiraron `Yulieth Serrano` y `Juan Esteban Rodriguez`, y se ordenó el listado alfabéticamente.
+3. **Compatibilidad con datos históricos:**
+   * El backend mantiene la columna "Cédula" en Google Sheets para no afectar registros existentes.
 
 ## 5. Control de Versiones con Git
 
